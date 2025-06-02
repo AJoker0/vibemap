@@ -1,152 +1,170 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { MapContainer, TileLayer, useMap } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
+import { useEffect, useState, useCallback } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import Supercluster from 'supercluster';
+import type { Feature, Point } from 'geojson';
 import L from 'leaflet';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 
-function LocateButton() {
-  const map = useMap();
+import '@/styles/buttons.css';
 
-  const handleLocate = useCallback(() => {
-    if (!navigator.geolocation) {
-      alert('Geolocation не поддерживается!');
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        map.setView([latitude, longitude], 13);
-        L.marker([latitude, longitude])
-          .addTo(map)
-          .bindPopup('Ты здесь!')
-          .openPopup();
-      },
-      () => {
-        alert('Не удалось получить локацию');
-      }
-    );
-  }, [map]);
+type PointData = {
+  id: number;
+  lat: number;
+  lng: number;
+  title: string;
+};
+
+type PointProperties = {
+  cluster: false;
+  pointId: number;
+  title: string;
+};
+
+type ClusterProperties = {
+  cluster: true;
+  cluster_id: number;
+  point_count: number;
+  point_count_abbreviated?: string | number;
+};
+
+type ClusterOrPoint = Feature<Point, PointProperties | ClusterProperties>;
+
+const defaultPoints: PointData[] = [
+  { id: 1, lat: 42.6977, lng: 23.3219, title: 'Sofia Center' },
+  { id: 2, lat: 42.6988, lng: 23.3220, title: 'Sofia North' },
+];
+
+const userIcon = new L.Icon({
+  iconUrl: '/user-map-location.png',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -28],
+  className: 'user-location-marker',
+});
+
+function Clusters({ points }: { points: PointData[] }) {
+  const map = useMap();
+  const [clusters, setClusters] = useState<ClusterOrPoint[]>([]);
+  const [supercluster, setSupercluster] = useState<Supercluster<PointProperties> | null>(null);
+
+  useEffect(() => {
+    const index = new Supercluster<PointProperties>({ radius: 60, maxZoom: 17 });
+    const geoPoints: Feature<Point, PointProperties>[] = points.map((point) => ({
+      type: 'Feature',
+      properties: { cluster: false, pointId: point.id, title: point.title },
+      geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
+    }));
+    index.load(geoPoints);
+    setSupercluster(index);
+  }, [points]);
+
+  useEffect(() => {
+    if (!supercluster || !map) return;
+    const bounds = map.getBounds();
+    const zoom = map.getZoom();
+    const bbox: [number, number, number, number] = [
+      bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth(),
+    ];
+    const newClusters = supercluster.getClusters(bbox, Math.round(zoom));
+    setClusters(newClusters as ClusterOrPoint[]);
+  }, [map, supercluster]);
 
   return (
-    <button
-      onClick={handleLocate}
-      type="button"
-      aria-label="Найти меня"
-      style={{
-        position: 'absolute',
-        top: '1rem',
-        right: '1rem',
-        zIndex: 1000,
-        backgroundColor: '#2563eb',
-        color: 'white',
-        padding: '0.5rem 1rem',
-        borderRadius: '6px',
-        border: 'none',
-        cursor: 'pointer',
-        boxShadow: '0 4px 6px rgba(37, 99, 235, 0.5)',
-      }}
-    >
-      Найти меня
-    </button>
+    <>
+      {clusters.map((cluster) => {
+        const [lng, lat] = cluster.geometry.coordinates;
+        const props = cluster.properties;
+        return 'cluster' in props && props.cluster ? (
+          <Marker key={`cluster-${props.cluster_id}`} position={[lat, lng]} eventHandlers={{
+            click: () => {
+              if (supercluster) {
+                const zoom = supercluster.getClusterExpansionZoom(props.cluster_id);
+                map.setView([lat, lng], zoom);
+              }
+            },
+          }}>
+            <Popup>Cluster of {props.point_count} points</Popup>
+          </Marker>
+        ) : (
+          <Marker key={`point-${props.pointId}`} position={[lat, lng]}>
+            <Popup>{props.title}</Popup>
+          </Marker>
+        );
+      })}
+    </>
   );
 }
 
 export function LeafletMap() {
-  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [geoStatus, setGeoStatus] = useState('🔄 Запрашиваю координаты...');
+  const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
+  const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
 
-  const togglePicker = useCallback(() => setIsPickerOpen((open) => !open), []);
-  const onEmojiSelect = useCallback(
-    (emoji: any) => {
-      const mood = emoji.native;
-      setSelectedEmoji(mood);
-      localStorage.setItem('user-mood', mood);
-      setIsPickerOpen(false);
-    },
-    []
-  );
+  const requestGeolocation = useCallback(() => {
+    if (!navigator.geolocation) {
+      setGeoStatus('❌ Геолокация не поддерживается!');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        const loc: [number, number] = [coords.latitude, coords.longitude];
+        setGeoStatus('✅ Координаты получены!');
+        setUserCoords(loc);
+        setUserLocation(loc);
+      },
+      (err) => {
+        setGeoStatus(`❌ Ошибка геолокации: ${err.message}`);
+      }
+    );
+  }, []);
+
+  useEffect(() => { requestGeolocation(); }, [requestGeolocation]);
+
+  if (!userLocation) return <div className="center">📡 Получаем геопозицию...</div>;
 
   return (
-    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {/* Mood picker button */}
-      <button
-        onClick={togglePicker}
-        aria-label="Выбрать настроение"
-        style={{
-          position: 'fixed',
-          top: '4rem',
-          right: '1rem',
-          zIndex: 1000,
-          backgroundColor: '#db2777',
-          color: 'white',
-          padding: '0.5rem 1rem',
-          borderRadius: '6px',
-          border: 'none',
-          cursor: 'pointer',
-          boxShadow: '0 4px 6px rgba(219, 39, 119, 0.4)',
-        }}
-      >
-        Мой вайб
-      </button>
+    <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
+      <MapContainer center={userLocation} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+        <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Clusters points={defaultPoints} />
+        <Marker position={userLocation} icon={userIcon}><Popup>🧍 Ты здесь</Popup></Marker>
+      </MapContainer>
 
-      {isPickerOpen && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '5.5rem',
-            right: '1rem',
-            zIndex: 1000,
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            boxShadow: '0 10px 15px rgba(0,0,0,0.1)',
-            maxWidth: '280px',
-            maxHeight: '350px',
-            overflowY: 'auto',
-            padding: '0.5rem',
-          }}
-        >
-          <Picker data={data} onEmojiSelect={onEmojiSelect} />
+      <button className="button" onClick={() => setIsOpen(true)}>Мой вайб</button>
+
+      {isOpen && (
+        <div className="emoji-picker-popup">
+          <Picker
+            data={data}
+            onEmojiSelect={(emoji: any) => {
+              const mood = emoji.native;
+              setSelectedEmoji(mood);
+              localStorage.setItem('user-mood', mood);
+              setIsOpen(false);
+            }}
+          />
         </div>
       )}
 
       {selectedEmoji && (
-        <div
-          aria-live="polite"
-          aria-label={`Выбранное настроение ${selectedEmoji}`}
-          style={{
-            position: 'fixed',
-            bottom: '1rem',
-            right: '1rem',
-            fontSize: '2.5rem',
-            zIndex: 1000,
-            backgroundColor: 'white',
-            borderRadius: '8px',
-            padding: '0.25rem 0.5rem',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            userSelect: 'none',
-            pointerEvents: 'none',
-          }}
-        >
-          {selectedEmoji}
+        <div className="emoji-indicator">{selectedEmoji}</div>
+      )}
+
+      {userCoords && (
+        <div className="coordinates-box">
+          <strong>📍 Координаты:</strong><br />
+          Широта: {userCoords[0].toFixed(6)}<br />
+          Долгота: {userCoords[1].toFixed(6)}<br />
+          <strong>{geoStatus}</strong>
         </div>
       )}
 
-      {/* Leaflet Map and LocateButton inside */}
-      <MapContainer
-        center={[42.6977, 23.3219]}
-        zoom={5}
-        scrollWheelZoom={true}
-        style={{ height: '100%', width: '100%' }}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution='&copy; <a href="http://osm.org/copyright">OpenStreetMap</a>'
-        />
-        <LocateButton />
-      </MapContainer>
+      
     </div>
   );
 }

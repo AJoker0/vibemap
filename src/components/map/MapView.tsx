@@ -1,12 +1,9 @@
-import { LeafletMap } from './LeafletMap';
+import MapWithClusters from './MapWithClusters';
 
 export default function MapView() {
   return (
     <div className="w-full h-[600px]">
-      <LeafletMap />
+      <MapWithClusters />
     </div>
   );
 }
-
-
-
