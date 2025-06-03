@@ -23,7 +23,7 @@ export const MoodDrawer = () => {
         onClick={() => setIsOpen(true)}
         className="bg-pink-500 text-white px-3 py-2 rounded shadow absolute z-[1000] bottom-4 left-4"
       >
-        Мой вайб
+        My Vibe
       </button>
 
       {isOpen && (

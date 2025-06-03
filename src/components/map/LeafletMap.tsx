@@ -11,8 +11,9 @@ import '@/styles/buttons.css';
 import { useRef } from 'react';
 import { VibeSelector } from './VibeSelector';
 import './vibe-selector.css';
-import { CountryWatcher } from './CountryWatcher';
+import { MapLayerSwitcher } from './MapLayerSwitcher'; // 👈 Создадим этот компонент
 import { CountryBadge } from './CountryBadge';
+import { MapLayerSelector } from './MapLayerSelector';
 
 
 
@@ -144,6 +145,8 @@ export function LeafletMap() {
   const mapRef = useRef<L.Map | null>(null);
   const [showFindMe, setShowFindMe] = useState(true);
   const [coordsForCountryBadge, setCoordsForCountryBadge] = useState<[number, number] | null>(null);
+  const [selectedLayer, setSelectedLayer] = useState('standard');
+  const [isLayerSelectorOpen, setIsLayerSelectorOpen] = useState(false);
 
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -175,18 +178,68 @@ export function LeafletMap() {
 }
   };
 
-  if (!userLocation) return <div className="center">📡 Получаем геопозицию...</div>;
+  if (!userLocation) return (
+  <div className="geo-loader-screen">
+    <div className="geo-loader-card">
+      <div className="geo-icon">📡</div>
+      <div className="geo-text">Getting geolocation...</div>
+      <div className="geo-spinner"></div>
+    </div>
+  </div>
+);
+
 
   return (
-    <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
+    <div style={{ position: 'fixed', 
+    top: 0, 
+    left: 0, 
+    width: '100vw', 
+    height: '100vh', 
+    overflow: 'hidden', 
+    zIndex: 0  }}>
+      
       {/* 🔥 Показываем страну в левом верхнем углу */}
     {userLocation && <CountryBadge coords={userLocation} />}
+    <div className="top-right-ui">
+      <button className="profile-button">👤</button>
+      <button className="settings-button">⚙️</button>
     
+    <div className="layer-switch-wrapper">
+    <button
+        onClick={() => setIsLayerSelectorOpen((prev) => !prev)}
+        className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
+        >
+        🌐
+      </button>
+    {isLayerSelectorOpen && (
+      <div className="map-style-popup">
+    <MapLayerSelector
+  layers={[
+    { id: 'standard', name: 'Standard', icon: '🗺️' },
+    { id: 'satellite', name: 'Satellite', icon: '🛰️' },
+    { id: 'relief', name: 'Relief', icon: '🏔️' },
+    { id: 'dark', name: 'Dark', icon: '🟣' },
+    { id: 'light', name: 'Light', icon: '🟡' },
+  ]}
+  current={selectedLayer}
+  onSelect={(id) => {
+    setSelectedLayer(id);
+    setIsLayerSelectorOpen(false); // ⛔ auto-close on select
+  }}
+/>
+      </div>
+    )}
+  </div>  
+</div>
     {coordsForCountryBadge && <CountryBadge coords={coordsForCountryBadge} />}
+      
+
       <MapContainer 
         center={userLocation}
         zoom={13}
         scrollWheelZoom={true}
+         attributionControl={false}
+        zoomControl={false} // 👈 отключили + и −
         style={{ height: '100%', width: '100%' }}
           ref={(ref) => {
           if (ref && !mapRef.current) {
@@ -196,9 +249,27 @@ export function LeafletMap() {
 
         
       >
-        <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+
+        {/* <MapLayerSwitcher /> */}
+
+        <TileLayer
+  attribution=""
+  url={
+    selectedLayer === 'standard'
+      ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+      : selectedLayer === 'satellite'
+      ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
+      : selectedLayer === 'relief'
+      ? 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+      : selectedLayer === 'dark'
+      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+      : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+  }
+/>
+
+
         <Marker position={userLocation} icon={userIcon}>
-          <Popup>🧍 Ты здесь</Popup>
+          <Popup>🧍 You are here!</Popup>
         </Marker>
 
          {/* 🔥 Эмодзи как отдельный Marker */}
@@ -224,7 +295,7 @@ export function LeafletMap() {
   <>
     <button className="button vibe" onClick={() => setIsOpen(!isOpen)}>
       <span className="icon">🎭</span>
-      Мой вайб
+      My Vibe
     </button>
 
     {isOpen && (

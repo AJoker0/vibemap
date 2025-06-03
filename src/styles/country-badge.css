@@ -2,17 +2,24 @@
 
 .country-badge {
   position: absolute;
-  top: 1rem;
-  left: 1rem;
+  top: 1.25rem;     /* чуть ниже */
+  left: 1.25rem;    /* не с краю */
   background: rgba(255, 255, 255, 0.85);
-  padding: 0.6rem 1.2rem;
-  border-radius: 12px;
-  font-size: 1rem;
-  font-weight: 700;
-  color: #111827;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
-  letter-spacing: 0.5px;
+  border-radius: 14px;
+  padding: 0.5rem 1rem;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  font-size: 1.05rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  z-index: 1100;
+  color: #1f2937;
+  font-family: 'Segoe UI', sans-serif;
   text-transform: uppercase;
-  z-index: 9999;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  pointer-events: none; /* 🛡 не мешает + */
 }
