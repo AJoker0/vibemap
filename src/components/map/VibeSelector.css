@@ -1,0 +1,39 @@
+.vibe-ui-wrapper {
+  position: absolute;
+  bottom: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  opacity: 0;
+}
+
+.vibe-ui-inner {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(14px);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.vibe-ui-emoji {
+  font-size: 1.85rem;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 0.35rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.25s ease;
+}
+
+.vibe-ui-emoji:hover {
+  transform: scale(1.2);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.vibe-ui-emoji:focus-visible {
+  box-shadow: 0 0 0 2px #8b5cf6;
+}
+

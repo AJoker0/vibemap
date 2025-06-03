@@ -1,3 +1,5 @@
+//src/components/map/MoodDrawer.tsx
+
 'use client';
 
 import { useState } from 'react';

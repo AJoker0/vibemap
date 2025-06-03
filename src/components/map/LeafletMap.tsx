@@ -1,14 +1,21 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import Supercluster from 'supercluster';
 import type { Feature, Point } from 'geojson';
 import L from 'leaflet';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
-
 import '@/styles/buttons.css';
+import { useRef } from 'react';
+import { VibeSelector } from './VibeSelector';
+import './vibe-selector.css';
+import { CountryWatcher } from './CountryWatcher';
+import { CountryBadge } from './CountryBadge';
+
+
+
 
 type PointData = {
   id: number;
@@ -34,7 +41,7 @@ type ClusterOrPoint = Feature<Point, PointProperties | ClusterProperties>;
 
 const defaultPoints: PointData[] = [
   { id: 1, lat: 42.6977, lng: 23.3219, title: 'Sofia Center' },
-  { id: 2, lat: 42.6988, lng: 23.3220, title: 'Sofia North' },
+  { id: 2, lat: 42.6988, lng: 23.322, title: 'Sofia North' },
 ];
 
 const userIcon = new L.Icon({
@@ -52,11 +59,18 @@ function Clusters({ points }: { points: PointData[] }) {
 
   useEffect(() => {
     const index = new Supercluster<PointProperties>({ radius: 60, maxZoom: 17 });
-    const geoPoints: Feature<Point, PointProperties>[] = points.map((point) => ({
-      type: 'Feature',
-      properties: { cluster: false, pointId: point.id, title: point.title },
-      geometry: { type: 'Point', coordinates: [point.lng, point.lat] },
-    }));
+    const geoPoints = points.map((point) => ({
+  type: 'Feature' as const,
+  properties: {
+    cluster: false as false,
+    pointId: point.id,
+    title: point.title,
+  },
+  geometry: {
+    type: 'Point' as const,
+    coordinates: [point.lng, point.lat],
+  },
+}));
     index.load(geoPoints);
     setSupercluster(index);
   }, [points]);
@@ -98,18 +112,45 @@ function Clusters({ points }: { points: PointData[] }) {
   );
 }
 
+// ✅ Следим за перемещением карты
+function MapWatcher({
+  userLocation,
+  onMoveAway,
+}: {
+  userLocation: [number, number] | null;
+  onMoveAway: () => void;
+}) {
+  useMapEvents({
+    moveend: (e) => {
+      if (!userLocation) return;
+      const center = e.target.getCenter();
+      const dist = Math.sqrt(
+        Math.pow(center.lat - userLocation[0], 2) + Math.pow(center.lng - userLocation[1], 2)
+      );
+      if (dist > 0.005) {
+        onMoveAway();
+      }
+    },
+  });
+  return null;
+}
+
 export function LeafletMap() {
   const [geoStatus, setGeoStatus] = useState('🔄 Запрашиваю координаты...');
   const [userCoords, setUserCoords] = useState<[number, number] | null>(null);
   const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedEmoji, setSelectedEmoji] = useState<string | null>(null);
+  const mapRef = useRef<L.Map | null>(null);
+  const [showFindMe, setShowFindMe] = useState(true);
+  const [coordsForCountryBadge, setCoordsForCountryBadge] = useState<[number, number] | null>(null);
 
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
       setGeoStatus('❌ Геолокация не поддерживается!');
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const loc: [number, number] = [coords.latitude, coords.longitude];
@@ -123,47 +164,87 @@ export function LeafletMap() {
     );
   }, []);
 
-  useEffect(() => { requestGeolocation(); }, [requestGeolocation]);
+  useEffect(() => {
+    requestGeolocation();
+  }, [requestGeolocation]);
+
+  const centerMapToUser = () => {
+    if (mapRef.current && userLocation) {
+  mapRef.current.setView(userLocation, 16);
+  setShowFindMe(false);
+}
+  };
 
   if (!userLocation) return <div className="center">📡 Получаем геопозицию...</div>;
 
   return (
     <div style={{ height: '100vh', width: '100%', position: 'relative' }}>
-      <MapContainer center={userLocation} zoom={13} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
+      {/* 🔥 Показываем страну в левом верхнем углу */}
+    {userLocation && <CountryBadge coords={userLocation} />}
+    
+    {coordsForCountryBadge && <CountryBadge coords={coordsForCountryBadge} />}
+      <MapContainer 
+        center={userLocation}
+        zoom={13}
+        scrollWheelZoom={true}
+        style={{ height: '100%', width: '100%' }}
+          ref={(ref) => {
+          if (ref && !mapRef.current) {
+            mapRef.current = ref;
+          }
+        }}
+
+        
+      >
         <TileLayer attribution="&copy; OpenStreetMap contributors" url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        <Marker position={userLocation} icon={userIcon}>
+          <Popup>🧍 Ты здесь</Popup>
+        </Marker>
+
+         {/* 🔥 Эмодзи как отдельный Marker */}
+  {selectedEmoji && (
+    <Marker
+      position={userLocation}
+      icon={
+        new L.DivIcon({
+          html: `<div style="font-size: 26px; transform: translateY(-35px);">${selectedEmoji}</div>`,
+          className: 'emoji-overlay',
+          iconSize: [0, 0],
+        })
+      }
+      interactive={false}
+    />
+  )}
+
         <Clusters points={defaultPoints} />
-        <Marker position={userLocation} icon={userIcon}><Popup>🧍 Ты здесь</Popup></Marker>
+        <MapWatcher userLocation={userLocation} onMoveAway={() => setShowFindMe(true)} />
       </MapContainer>
 
-      <button className="button" onClick={() => setIsOpen(true)}>Мой вайб</button>
+      {!showFindMe ? (
+  <>
+    <button className="button vibe" onClick={() => setIsOpen(!isOpen)}>
+      <span className="icon">🎭</span>
+      Мой вайб
+    </button>
 
-      {isOpen && (
-        <div className="emoji-picker-popup">
-          <Picker
-            data={data}
-            onEmojiSelect={(emoji: any) => {
-              const mood = emoji.native;
-              setSelectedEmoji(mood);
-              localStorage.setItem('user-mood', mood);
-              setIsOpen(false);
-            }}
-          />
-        </div>
-      )}
+    {isOpen && (
+      <VibeSelector
+  onSelect={(emoji: string) => {
+    setSelectedEmoji(emoji);
+    localStorage.setItem('user-mood', emoji);
+    setIsOpen(false);
+  }}
+  onClose={() => setIsOpen(false)}
+/>
 
-      {selectedEmoji && (
-        <div className="emoji-indicator">{selectedEmoji}</div>
-      )}
-
-      {userCoords && (
-        <div className="coordinates-box">
-          <strong>📍 Координаты:</strong><br />
-          Широта: {userCoords[0].toFixed(6)}<br />
-          Долгота: {userCoords[1].toFixed(6)}<br />
-          <strong>{geoStatus}</strong>
-        </div>
-      )}
-
+    )}
+  </>
+) : (
+  <button className="button find-me" onClick={centerMapToUser}>
+    <span className="icon">📍</span>
+    Find Me
+  </button>
+)}
       
     </div>
   );
