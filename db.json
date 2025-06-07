@@ -1,0 +1,52 @@
+{
+  "profile": {
+    "name": "Andrii",
+    "avatar": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAQDAwQDAwQEAwQFBAQFBgoHBgYGBg0JCggKDw0QEA8NDw4RExgUERIXEg4PFRwVFxkZGxsbEBQdHx0aHxgaGxr/2wBDAQQFBQYFBgwHBwwaEQ8RGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhr/wAARCADxANEDASIAAhEBAxEB/8QAFwABAQEBAAAAAAAAAAAAAAAAAAIBCP/EABkQAQEBAAMAAAAAAAAAAAAAAAACEkOCg//EABYBAQEBAAAAAAAAAAAAAAAAAAADAv/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AOAxQsyAAAAlQlMUlSQUJUAlSQUJAUkUCVCQUAoAAAAGhQCUqSCgASpKgBImApIApIKTQAAAAApKgCgSCgSCgFBIrIAlSQFAmCVJAFJBSQAFJAAAAAkAFJABSVAkFAAKAAmJFJUABMFJAAAAAUkAAAAAAAUJAAAUJAUAoAACQAATAAAAAAAAAUkAAAABQAlSQFJFAAKAAmJAAAAAABQJAAAAAAAAAAAABQCRQACgaDImJAAFJAAAAAAGgAZABoAAAGQAAAFJAFAABoUEyCkxIAAAAAAAAAAAAAAA0ADIAAoSCgFBIoBICYAAAoEgAAAAAAAAAAASAAAApKgSpKgBIoAKBICYAAAAAAAAAAAAAAAAAApKkgoAAABKhQSpKgEqSmKSACkgAAAAAAAAAKBIKAAAAUAAAAEgpMSAAAAAoACYAAAAAApKkgoAABQAABvmAwSJikqFBIpIKSCYpNClBIAACYpIAoSAoSoEqACQAAFADIAlSQUACQABQCRQCQAFAAkExQlSgAJgBSgAAAAAAAAAJiRQoJFAAJBSRQJUJBQAAAAAAAAAAAAnsAqQASACiQBKqAAAEqAaSqQGQAEqoAJAAoAAkAOUAFAA/9k=",
+    "birthday": "2222-02-21",
+    "username": "mrtraher",
+    "notifications": false
+  },
+  "friends": [],
+  "visits": [
+    {
+      "id": "abfd",
+      "lat": 43.210978659757316,
+      "lng": 27.926258094321838,
+      "city": "Варна",
+      "timestamp": "2025-06-04T15:37:23.087Z",
+      "emoji": "❤️"
+    },
+    {
+      "id": "1755",
+      "lat": 43.210978659757316,
+      "lng": 27.926258094321838,
+      "city": "Варна",
+      "timestamp": "2025-06-04T15:37:29.008Z",
+      "emoji": "🛹"
+    },
+    {
+      "id": "a225",
+      "lat": 43.21099164509548,
+      "lng": 27.926258946954,
+      "city": "Варна",
+      "timestamp": "2025-06-04T16:15:46.676Z",
+      "emoji": "👀"
+    },
+    {
+      "id": "cd70",
+      "lat": 43.211006625,
+      "lng": 27.926234375,
+      "city": "Варна",
+      "timestamp": "2025-06-04T17:04:49.612Z",
+      "emoji": "😊"
+    },
+    {
+      "id": "99e8",
+      "lat": 43.21098581891358,
+      "lng": 27.926264445822312,
+      "city": "Варна",
+      "timestamp": "2025-06-04T18:40:58.976Z",
+      "emoji": "❤️"
+    }
+  ]
+}
