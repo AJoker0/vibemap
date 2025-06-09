@@ -15,7 +15,8 @@
     "build-storybook": "storybook build",
     "serve:db": "json-server --watch db.json --port 5000",
     "db": "json-server --watch db.json --port 5000",
-    "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:api\""
+    "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:api\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
