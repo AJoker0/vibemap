@@ -187,7 +187,7 @@ export default function LeafletMap() {
         const loc: [number, number] = [coords.latitude, coords.longitude]
         setUserLocation(loc)
       },
-      (err) => {}
+      (_err) => {}
     )
   }, [])
 

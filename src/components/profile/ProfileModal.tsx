@@ -185,7 +185,12 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
           <div className="friends-list">
             {friends.map((friend, index) => (
               <div className="friend-row" key={index}>
-                <Image src={friend.avatar} alt={friend.name} width={40} height={40} />
+                <Image
+                  src={friend.avatar}
+                  alt={friend.name}
+                  width={40}
+                  height={40}
+                />
                 <span className="friend-name">{friend.name}</span>
                 {friend.mutual && <span className="mutual">mutual</span>}
                 {friend.daysAgo && (
