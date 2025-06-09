@@ -163,7 +163,6 @@ function MapWatcher({
 }
 
 export default function LeafletMap() {
-  const [geoStatus, setGeoStatus] = useState('🔄 Запрашиваю координаты...')
   const [userLocation, setUserLocation] = useState<[number, number] | null>(
     null
   )
@@ -414,7 +413,6 @@ export default function LeafletMap() {
           Find Me
         </button>
       )}
-      export default LeafletMap;
     </div>
   )
 }

@@ -2,7 +2,6 @@
 'use client'
 
 import { useMapEvents } from 'react-leaflet'
-import { useEffect } from 'react'
 
 export function CountryWatcher({
   onMove,

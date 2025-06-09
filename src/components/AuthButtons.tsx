@@ -23,7 +23,7 @@ export default function AuthButtons() {
 
       try {
         data = await res.json()
-      } catch (jsonErr) {
+      } catch {
         throw new Error(`❌ Invalid JSON from server: ${res.status}`)
       }
 
@@ -31,8 +31,12 @@ export default function AuthButtons() {
       if (!data.token) throw new Error('❌ No token returned')
 
       login(data.token)
-    } catch (err: any) {
-      setError(err.message || 'Неизвестная ошибка')
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Неизвестная ошибка')
+      } else {
+        setError('Неизвестная ошибка')
+      }
     }
   }
 

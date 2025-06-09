@@ -17,7 +17,7 @@ export default function RegisterModal({ onClose }: { onClose: () => void }) {
       const token = await register(email, password)
       login(token)
       onClose()
-    } catch (err) {
+    } catch {
       alert('Register failed')
     }
   }

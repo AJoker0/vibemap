@@ -10,8 +10,8 @@ export const MoodDrawer = () => {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedEmoji, setSelectedEmoji] = useState('')
 
-  const handleSelect = (emoji: any) => {
-    const mood = emoji.native
+  const handleSelect = (emoji: unknown) => {
+    const mood = (emoji as { native: string }).native
     setSelectedEmoji(mood)
     localStorage.setItem('user-mood', mood)
     setIsOpen(false)

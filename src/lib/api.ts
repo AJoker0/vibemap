@@ -1,7 +1,7 @@
 const BASE_URL = 'http://localhost:5000'
 
 // ✅ Универсальный fetch с токеном
-export async function safeFetchJSON<T = any>(
+export async function safeFetchJSON<T = unknown>(
   url: string,
   token?: string | null
 ): Promise<T> {
@@ -18,7 +18,7 @@ export async function safeFetchJSON<T = any>(
   const text = await res.text()
   try {
     return JSON.parse(text)
-  } catch (err) {
+  } catch {
     throw new Error(
       `❌ Failed to parse JSON from ${url}\nRaw response:\n${text}`
     )

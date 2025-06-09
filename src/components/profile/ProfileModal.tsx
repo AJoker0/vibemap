@@ -4,8 +4,9 @@
 
 import { useEffect, useState } from 'react'
 import './profile-modal.css'
-import { getProfile, updateProfile } from '@/lib/api'
+import { getProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
+import Image from 'next/image'
 
 type Visit = {
   lat: number
@@ -132,7 +133,7 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
                   }
                 }}
               />
-              <img className="avatar-pic" src={avatar} alt="avatar" />
+              <Image className="avatar-pic" src={avatar} alt="avatar" fill />
               <span className="camera-icon">📷</span>
             </label>
           </div>
@@ -184,7 +185,7 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
           <div className="friends-list">
             {friends.map((friend, index) => (
               <div className="friend-row" key={index}>
-                <img src={friend.avatar} alt={friend.name} />
+                <Image src={friend.avatar} alt={friend.name} width={40} height={40} />
                 <span className="friend-name">{friend.name}</span>
                 {friend.mutual && <span className="mutual">mutual</span>}
                 {friend.daysAgo && (

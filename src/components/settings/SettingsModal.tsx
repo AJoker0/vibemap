@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import './settings-modal.css'
-import { getProfile, updateProfile, ProfileUpdate } from '@/lib/api'
+import { getProfile, updateProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
+import Image from 'next/image'
 
 type Profile = {
   name: string
@@ -112,7 +113,13 @@ export function SettingsModal({ onClose }: Props) {
           <h3 className="section-title">PROFILE</h3>
           <div className="row">
             <span>Picture</span>
-            <img src={profile.avatar} alt="avatar" className="avatar" />
+            <Image
+              src={profile.avatar}
+              alt="avatar"
+              className="avatar"
+              width={100}
+              height={100}
+            />
           </div>
           <div className="row">
             <span>Name</span>

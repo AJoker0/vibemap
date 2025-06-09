@@ -6,7 +6,7 @@ import { ComponentType } from 'react'
 const LeafletMap = dynamic(
   () =>
     import('./LeafletMap') as unknown as Promise<{
-      default: ComponentType<any>
+      default: ComponentType<unknown>
     }>,
   {
     ssr: false,

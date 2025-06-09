@@ -17,7 +17,7 @@ export default function RegisterPage() {
       const token = await register(email, password)
       login(token)
       router.push('/')
-    } catch (err) {
+    } catch {
       alert('Registration failed')
     }
   }

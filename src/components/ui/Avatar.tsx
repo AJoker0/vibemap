@@ -1,4 +1,6 @@
 // components/ui/Avatar.tsx
+import Image from 'next/image'
+
 interface AvatarProps {
   src: string
   alt?: string
@@ -7,7 +9,7 @@ interface AvatarProps {
 
 export const Avatar = ({ src, alt = 'Avatar', size = 40 }: AvatarProps) => {
   return (
-    <img
+    <Image
       src={src}
       alt={alt}
       width={size}

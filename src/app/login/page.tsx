@@ -17,7 +17,7 @@ export default function LoginPage() {
       const token = await loginUser(email, password)
       login(token)
       router.push('/')
-    } catch (err) {
+    } catch {
       alert('Login failed')
     }
   }
