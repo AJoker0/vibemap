@@ -1,11 +1,15 @@
 // src/components/map/MapLayerSelector.tsx
-'use client';
+'use client'
 
-import './MapLayerSelector.css';
+import './MapLayerSelector.css'
 
-export function MapLayerSelector({ layers, current, onSelect }: {
-  layers: { id: string, name: string, icon: string }[],
-  current: string,
+export function MapLayerSelector({
+  layers,
+  current,
+  onSelect,
+}: {
+  layers: { id: string; name: string; icon: string }[]
+  current: string
   onSelect: (id: string) => void
 }) {
   return (
@@ -21,5 +25,5 @@ export function MapLayerSelector({ layers, current, onSelect }: {
         </button>
       ))}
     </div>
-  );
+  )
 }

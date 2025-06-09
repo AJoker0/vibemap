@@ -1,51 +1,49 @@
-'use client';
+'use client'
 
-import { useEffect, useState, CSSProperties } from 'react';
+import { useEffect, useState, CSSProperties } from 'react'
 
 type Props = {
-  coords: [number, number];
-};
+  coords: [number, number]
+}
 
 export function CountryBadge({ coords }: Props) {
-  const [country, setCountry] = useState<string | null>(null);
-  const [flagEmoji, setFlagEmoji] = useState<string | null>(null);
+  const [country, setCountry] = useState<string | null>(null)
+  const [flagEmoji, setFlagEmoji] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchCountry = async () => {
       try {
         const res = await fetch(
           `https://nominatim.openstreetmap.org/reverse?lat=${coords[0]}&lon=${coords[1]}&format=json&accept-language=en`
-        );
-        const data = await res.json();
-        const countryName = data.address.country;
-        const countryCode = data.address.country_code?.toUpperCase();
+        )
+        const data = await res.json()
+        const countryName = data.address.country
+        const countryCode = data.address.country_code?.toUpperCase()
 
-        setCountry(countryName);
+        setCountry(countryName)
         if (countryCode) {
-          setFlagEmoji(getFlagEmoji(countryCode));
+          setFlagEmoji(getFlagEmoji(countryCode))
         }
       } catch (err) {
-        console.error('❌ Failed to fetch country:', err);
+        console.error('❌ Failed to fetch country:', err)
       }
-    };
+    }
 
-    fetchCountry();
-  }, [coords]);
+    fetchCountry()
+  }, [coords])
 
   return (
     <div style={zenBadgeStyle}>
       {flagEmoji && <span style={zenFlagStyle}>{flagEmoji}</span>}
       {country && <span style={zenNameStyle}>{country.toUpperCase()}</span>}
     </div>
-  );
+  )
 }
 
 function getFlagEmoji(countryCode: string) {
   return countryCode
     .toUpperCase()
-    .replace(/./g, (char) =>
-      String.fromCodePoint(127397 + char.charCodeAt(0))
-    );
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)))
 }
 
 // 🎨 Inline styles (Zenly inspired)
@@ -67,11 +65,11 @@ const zenBadgeStyle: CSSProperties = {
   boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
   zIndex: 1100,
   transition: 'all 0.3s ease',
-};
+}
 
 const zenFlagStyle: CSSProperties = {
   fontSize: '1.4rem',
-};
+}
 
 const zenNameStyle: CSSProperties = {
   fontFamily: `'Inter', 'Segoe UI', sans-serif`,
@@ -79,4 +77,4 @@ const zenNameStyle: CSSProperties = {
   letterSpacing: '0.4px',
   color: '#111827',
   textTransform: 'uppercase',
-};
+}

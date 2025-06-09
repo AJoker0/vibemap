@@ -1,16 +1,20 @@
 // src/components/map/CountryWatcher.tsx
-'use client';
+'use client'
 
-import { useMapEvents } from 'react-leaflet';
-import { useEffect } from 'react';
+import { useMapEvents } from 'react-leaflet'
+import { useEffect } from 'react'
 
-export function CountryWatcher({ onMove }: { onMove: (coords: [number, number]) => void }) {
+export function CountryWatcher({
+  onMove,
+}: {
+  onMove: (coords: [number, number]) => void
+}) {
   useMapEvents({
     moveend: (e) => {
-      const center = e.target.getCenter();
-      onMove([center.lat, center.lng]);
+      const center = e.target.getCenter()
+      onMove([center.lat, center.lng])
     },
-  });
+  })
 
-  return null;
+  return null
 }

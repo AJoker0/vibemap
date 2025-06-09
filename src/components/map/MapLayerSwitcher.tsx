@@ -1,6 +1,6 @@
-'use client';
+'use client'
 
-import { LayersControl, TileLayer } from 'react-leaflet';
+import { LayersControl, TileLayer } from 'react-leaflet'
 
 export function MapLayerSwitcher() {
   return (
@@ -21,9 +21,9 @@ export function MapLayerSwitcher() {
 
       <LayersControl.BaseLayer name="🗺 Relief (Terrain)">
         <TileLayer
-    attribution="© OpenTopoMap"
-    url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
-  />
+          attribution="© OpenTopoMap"
+          url="https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+        />
       </LayersControl.BaseLayer>
 
       <LayersControl.BaseLayer name="🌑 Dark">
@@ -40,5 +40,5 @@ export function MapLayerSwitcher() {
         />
       </LayersControl.BaseLayer>
     </LayersControl>
-  );
+  )
 }

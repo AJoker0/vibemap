@@ -6,11 +6,31 @@ import { Smile, Meh, Frown, Angry, PartyPopper } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 const emojis = [
-  { label: 'Happy', icon: <Smile className="w-6 h-6 text-yellow-400" />, value: 'happy' },
-  { label: 'Neutral', icon: <Meh className="w-6 h-6 text-gray-400" />, value: 'neutral' },
-  { label: 'Sad', icon: <Frown className="w-6 h-6 text-blue-400" />, value: 'sad' },
-  { label: 'Angry', icon: <Angry className="w-6 h-6 text-red-500" />, value: 'angry' },
-  { label: 'Party', icon: <PartyPopper className="w-6 h-6 text-pink-400" />, value: 'party' },
+  {
+    label: 'Happy',
+    icon: <Smile className="w-6 h-6 text-yellow-400" />,
+    value: 'happy',
+  },
+  {
+    label: 'Neutral',
+    icon: <Meh className="w-6 h-6 text-gray-400" />,
+    value: 'neutral',
+  },
+  {
+    label: 'Sad',
+    icon: <Frown className="w-6 h-6 text-blue-400" />,
+    value: 'sad',
+  },
+  {
+    label: 'Angry',
+    icon: <Angry className="w-6 h-6 text-red-500" />,
+    value: 'angry',
+  },
+  {
+    label: 'Party',
+    icon: <PartyPopper className="w-6 h-6 text-pink-400" />,
+    value: 'party',
+  },
 ]
 
 export function MoodButton() {

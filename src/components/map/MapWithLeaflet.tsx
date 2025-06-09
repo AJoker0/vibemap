@@ -1,8 +1,8 @@
-'use client';
+'use client'
 
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 
 export default function MapWithLeaflet() {
   return (
@@ -15,5 +15,5 @@ export default function MapWithLeaflet() {
         <Popup>Test Popup</Popup>
       </Marker>
     </MapContainer>
-  );
+  )
 }

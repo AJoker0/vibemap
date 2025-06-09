@@ -1,21 +1,21 @@
 //src/components/map/MoodDrawer.tsx
 
-'use client';
+'use client'
 
-import { useState } from 'react';
-import Picker from '@emoji-mart/react';
-import data from '@emoji-mart/data';
+import { useState } from 'react'
+import Picker from '@emoji-mart/react'
+import data from '@emoji-mart/data'
 
 export const MoodDrawer = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState('');
+  const [isOpen, setIsOpen] = useState(false)
+  const [selectedEmoji, setSelectedEmoji] = useState('')
 
   const handleSelect = (emoji: any) => {
-    const mood = emoji.native;
-    setSelectedEmoji(mood);
-    localStorage.setItem('user-mood', mood);
-    setIsOpen(false);
-  };
+    const mood = emoji.native
+    setSelectedEmoji(mood)
+    localStorage.setItem('user-mood', mood)
+    setIsOpen(false)
+  }
 
   return (
     <>
@@ -38,5 +38,5 @@ export const MoodDrawer = () => {
         </div>
       )}
     </>
-  );
-};
+  )
+}

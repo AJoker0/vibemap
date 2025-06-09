@@ -1,116 +1,113 @@
 // src/components/profile/ProfileModal.tsx
 
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import './profile-modal.css';
-import { getProfile, updateProfile } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { useEffect, useState } from 'react'
+import './profile-modal.css'
+import { getProfile, updateProfile } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext'
 
 type Visit = {
-  lat: number;
-  lng: number;
-  city: string;
-  timestamp: string;
-  emoji: string;
-};
+  lat: number
+  lng: number
+  city: string
+  timestamp: string
+  emoji: string
+}
 
 type Friend = {
-  name: string;
-  avatar: string;
-  mutual?: boolean;
-  daysAgo?: number;
-};
+  name: string
+  avatar: string
+  mutual?: boolean
+  daysAgo?: number
+}
 
 type City = {
-  name: string;
-  places: number;
-};
+  name: string
+  places: number
+}
 
 type Props = {
-  onClose: () => void;
-  friends: Friend[];
-  cities: City[];
-};
+  onClose: () => void
+  friends: Friend[]
+  cities: City[]
+}
 
 export function ProfileModal({ onClose, friends, cities }: Props) {
-  const [avatar, setAvatar] = useState('/user.png');
-  const [name, setName] = useState('Loading...');
-  const [activeTab, setActiveTab] = useState<'friends' | 'cities'>('friends');
-  const [showSaved, setShowSaved] = useState(false);
-  const [topCity, setTopCity] = useState<City | null>(null);
+  const [avatar, setAvatar] = useState('/user.png')
+  const [name, setName] = useState('Loading...')
+  const [activeTab, setActiveTab] = useState<'friends' | 'cities'>('friends')
+  const [showSaved, setShowSaved] = useState(false)
+  const [topCity, setTopCity] = useState<City | null>(null)
 
-  const { token } = useAuth();
+  const { token } = useAuth()
 
   useEffect(() => {
-  const fetchProfile = async () => {
-    if (!token) return; // 🛑 Без токена не выходим в сеть
+    const fetchProfile = async () => {
+      if (!token) return // 🛑 Без токена не выходим в сеть
 
-    try {
-      const profile = await getProfile(token);
-      const visitsRes = await fetch('http://localhost:5000/visits', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      try {
+        const profile = await getProfile(token)
+        const visitsRes = await fetch('http://localhost:5000/visits', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
 
-      if (!visitsRes.ok) throw new Error('Failed to fetch visits');
+        if (!visitsRes.ok) throw new Error('Failed to fetch visits')
 
-      const visits: Visit[] = await visitsRes.json();
-      setName(profile.name);
-      setAvatar(profile.avatar);
+        const visits: Visit[] = await visitsRes.json()
+        setName(profile.name)
+        setAvatar(profile.avatar)
 
-      const cityCounts: Record<string, number> = {};
-      visits.forEach((v) => {
-        cityCounts[v.city] = (cityCounts[v.city] || 0) + 1;
-      });
+        const cityCounts: Record<string, number> = {}
+        visits.forEach((v) => {
+          cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
+        })
 
-      const sorted = Object.entries(cityCounts).sort((a, b) => b[1] - a[1]);
-      if (sorted.length > 0) {
-        setTopCity({ name: sorted[0][0], places: sorted[0][1] });
+        const sorted = Object.entries(cityCounts).sort((a, b) => b[1] - a[1])
+        if (sorted.length > 0) {
+          setTopCity({ name: sorted[0][0], places: sorted[0][1] })
+        }
+      } catch (err) {
+        console.error('❌ fetchProfile error:', err)
       }
-
-    } catch (err) {
-      console.error('❌ fetchProfile error:', err);
     }
-  };
 
-  if (token) {
-    fetchProfile();
-  }
-}, [token]); // 🔁 запускается только когда token будет готов
-
+    if (token) {
+      fetchProfile()
+    }
+  }, [token]) // 🔁 запускается только когда token будет готов
 
   const handleSave = async () => {
-  if (!token) {
-    console.error('❌ No token, cannot save profile');
-    return;
-  }
-
-  try {
-    console.log('🔐 Saving with token:', token);
-
-    const res = await fetch('http://localhost:5000/profile', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ name, avatar }),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData?.error || 'Unknown error');
+    if (!token) {
+      console.error('❌ No token, cannot save profile')
+      return
     }
 
-    setShowSaved(true);
-    setTimeout(() => setShowSaved(false), 2000);
-  } catch (error) {
-    console.error('❌ Save failed:', error);
-  }
-};
+    try {
+      console.log('🔐 Saving with token:', token)
 
+      const res = await fetch('http://localhost:5000/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name, avatar }),
+      })
+
+      if (!res.ok) {
+        const errorData = await res.json()
+        throw new Error(errorData?.error || 'Unknown error')
+      }
+
+      setShowSaved(true)
+      setTimeout(() => setShowSaved(false), 2000)
+    } catch (error) {
+      console.error('❌ Save failed:', error)
+    }
+  }
 
   return (
     <div className="profile-backdrop" onClick={onClose}>
@@ -123,15 +120,15 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
                 accept="image/*"
                 hidden
                 onChange={(e) => {
-                  const file = e.target.files?.[0];
+                  const file = e.target.files?.[0]
                   if (file) {
-                    const reader = new FileReader();
+                    const reader = new FileReader()
                     reader.onload = () => {
                       if (typeof reader.result === 'string') {
-                        setAvatar(reader.result);
+                        setAvatar(reader.result)
                       }
-                    };
-                    reader.readAsDataURL(file);
+                    }
+                    reader.readAsDataURL(file)
                   }
                 }}
               />
@@ -190,7 +187,9 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
                 <img src={friend.avatar} alt={friend.name} />
                 <span className="friend-name">{friend.name}</span>
                 {friend.mutual && <span className="mutual">mutual</span>}
-                {friend.daysAgo && <span className="dimmed">{friend.daysAgo} days</span>}
+                {friend.daysAgo && (
+                  <span className="dimmed">{friend.daysAgo} days</span>
+                )}
               </div>
             ))}
           </div>
@@ -206,5 +205,5 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
         )}
       </div>
     </div>
-  );
+  )
 }

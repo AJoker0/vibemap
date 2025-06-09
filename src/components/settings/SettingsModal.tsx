@@ -1,21 +1,21 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import './settings-modal.css';
-import { getProfile, updateProfile, ProfileUpdate } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext'; // ✅ ДОБАВИЛ ЭТО
+import { useEffect, useState } from 'react'
+import './settings-modal.css'
+import { getProfile, updateProfile, ProfileUpdate } from '@/lib/api'
+import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
 
 type Profile = {
-  name: string;
-  avatar: string;
-  birthday?: string;
-  username?: string;
-  notifications?: boolean;
-};
+  name: string
+  avatar: string
+  birthday?: string
+  username?: string
+  notifications?: boolean
+}
 
 type Props = {
-  onClose: () => void;
-};
+  onClose: () => void
+}
 
 export function SettingsModal({ onClose }: Props) {
   const [profile, setProfile] = useState<Profile>({
@@ -24,78 +24,84 @@ export function SettingsModal({ onClose }: Props) {
     birthday: '',
     username: '',
     notifications: false,
-  });
+  })
 
-  const [toastVisible, setToastVisible] = useState(false);
-  const [username, setUsername] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [notifications, setNotifications] = useState(false);
-  const [birthday, setBirthday] = useState('');
+  const [toastVisible, setToastVisible] = useState(false)
+  const [username, setUsername] = useState('')
+  const [usernameError, setUsernameError] = useState('')
+  const [notifications, setNotifications] = useState(false)
+  const [birthday, setBirthday] = useState('')
 
-  const { token } = useAuth(); // ✅ ВЫНЕС token в scope всего компонента
+  const { token } = useAuth() // ✅ ВЫНЕС token в scope всего компонента
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    window.location.href = '/login'; // или другой маршрут, если нужен
-  };
+    localStorage.removeItem('authToken')
+    window.location.href = '/login' // или другой маршрут, если нужен
+  }
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    document.addEventListener('keydown', handleEsc);
-    return () => document.removeEventListener('keydown', handleEsc);
-  }, [onClose]);
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleEsc)
+    return () => document.removeEventListener('keydown', handleEsc)
+  }, [onClose])
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!token) return;
-      const data = await getProfile(token);
+      if (!token) return
+      const data = await getProfile(token)
 
-      setProfile(data);
-      setUsername(data.username || '');
-      setNotifications(data.notifications ?? false);
-      setBirthday(data.birthday || '1995-08-07');
-    };
-    fetchData();
-  }, [token]);
+      setProfile(data)
+      setUsername(data.username || '')
+      setNotifications(data.notifications ?? false)
+      setBirthday(data.birthday || '1995-08-07')
+    }
+    fetchData()
+  }, [token])
 
   const checkUsername = async () => {
     try {
-      if (!token) return false;
-      const res = await fetch(`http://localhost:5000/check-username?username=${username}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`);
-      const data = await res.json();
+      if (!token) return false
+      const res = await fetch(
+        `http://localhost:5000/check-username?username=${username}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      )
+      if (!res.ok) throw new Error(`Server responded with ${res.status}`)
+      const data = await res.json()
       if (data.taken) {
-        setUsernameError('❌ Taken');
-        return false;
+        setUsernameError('❌ Taken')
+        return false
       }
-      setUsernameError('');
-      return true;
+      setUsernameError('')
+      return true
     } catch (err) {
-      console.error('⚠️ Username check failed:', err);
-      setUsernameError('⚠️ Error checking username');
-      return false;
+      console.error('⚠️ Username check failed:', err)
+      setUsernameError('⚠️ Error checking username')
+      return false
     }
-  };
+  }
 
   const handleSave = async () => {
-    if (!token || usernameError) return;
-    const isValid = await checkUsername();
-    if (!isValid) return;
+    if (!token || usernameError) return
+    const isValid = await checkUsername()
+    if (!isValid) return
 
     try {
-      await updateProfile({ ...profile, birthday, username, notifications }, token);
-      setToastVisible(true);
-      setTimeout(() => setToastVisible(false), 3000);
+      await updateProfile(
+        { ...profile, birthday, username, notifications },
+        token
+      )
+      setToastVisible(true)
+      setTimeout(() => setToastVisible(false), 3000)
     } catch (err) {
-      console.error('❌ Failed to save:', err);
+      console.error('❌ Failed to save:', err)
     }
-  };
+  }
 
   return (
     <div className="settings-backdrop" onClick={onClose}>
@@ -119,12 +125,14 @@ export function SettingsModal({ onClose }: Props) {
               className={`input-text ${usernameError ? 'error' : ''}`}
               value={username}
               onChange={(e) => {
-                setUsername(e.target.value);
-                setUsernameError('');
+                setUsername(e.target.value)
+                setUsernameError('')
               }}
               onBlur={checkUsername}
             />
-            {usernameError && <span className="error-text">{usernameError}</span>}
+            {usernameError && (
+              <span className="error-text">{usernameError}</span>
+            )}
           </div>
 
           <div className="row">
@@ -155,9 +163,9 @@ export function SettingsModal({ onClose }: Props) {
               type="checkbox"
               checked={notifications}
               onChange={(e) => {
-                setNotifications(e.target.checked);
+                setNotifications(e.target.checked)
                 if (e.target.checked && Notification.permission !== 'granted') {
-                  Notification.requestPermission();
+                  Notification.requestPermission()
                 }
               }}
             />
@@ -173,14 +181,9 @@ export function SettingsModal({ onClose }: Props) {
             💾 Save
           </button>
 
-          <button
-            className="logout-btn"
-            onClick={handleLogout}
-            type="button"
-          >
+          <button className="logout-btn" onClick={handleLogout} type="button">
             🚪 Logout
           </button>
-          
         </div>
       </div>
 
@@ -191,5 +194,5 @@ export function SettingsModal({ onClose }: Props) {
         </div>
       )}
     </div>
-  );
+  )
 }
