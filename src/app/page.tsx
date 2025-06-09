@@ -1,8 +1,48 @@
-export default function Home() {
-  return (
-    <main className="min-h-screen grid place-items-center">
-      <h1 className="text-4xl font-bold">🌍 Vibe Map стартовал</h1>
-      <p className="text-gray-500 mt-2">Готов к созданию UI Kit</p>
-    </main>
-  )
+// src/app/page.tsx
+
+'use client';
+
+import dynamic from 'next/dynamic';
+import { useAuth } from '@/context/AuthContext';
+import { useEffect, useState } from 'react';
+import { getProfile } from '@/lib/api';
+import LoginModal from '@/components/auth/LoginModal';
+import RegisterModal from '@/components/auth/RegisterModal';
+import AuthButtons from '../components/AuthButtons';
+
+// ⛔ SSR disabled for Leaflet map
+const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), {
+  ssr: false,
+});
+
+export default function HomePage() {
+  const { user, token } = useAuth(); // ⬅️ добавлен token
+  const [showLogin, setShowLogin] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+
+  // 🧠 ⚠️ Пример правильной загрузки профиля
+  useEffect(() => {
+    const load = async () => {
+      if (!token) return; // ⛔ Без токена ничего не грузим
+
+      try {
+        const data = await getProfile(token);
+        console.log('✅ Профиль загружен:', data);
+      } catch (err) {
+        console.error('⚠️ Ошибка загрузки профиля:', err);
+      }
+    };
+
+    load();
+  }, [token]); // 🔁 Зависимость от токена
+
+  if (!user) {
+    return (
+      <>
+        <AuthButtons />
+      </>
+    );
+  }
+
+  return <LeafletMap />;
 }

@@ -1,0 +1,173 @@
+/* src/components/settings/settings-modal.css */
+
+.settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.settings-modal {
+  background: #111827;
+  color: white;
+  padding: 2rem;
+  border-radius: 24px;
+  width: 90%;
+  max-width: 400px;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  animation: fadeInUp 0.35s ease-out;
+}
+
+.settings-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  text-transform: uppercase;
+  color: #e2e8f0;
+}
+
+.section-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #60a5fa;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0.6rem 0;
+}
+
+.dimmed {
+  color: #9ca3af;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1e40af;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.25);
+}
+
+.input-date {
+  background: #1f2937;
+  color: #fff;
+  border: 1px solid #374151;
+  padding: 0.3rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+}
+
+.input-date::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
+.save-wrapper {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.save-settings-btn {
+  background: #38bdf8;
+  color: #111;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.save-settings-btn:hover {
+  background: #0ea5e9;
+}
+
+@keyframes fadeInUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.input-date {
+  background: transparent;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 4px 10px;
+  color: #e2e8f0;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.input-date:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.3);
+}
+
+.toast-popup {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #38bdf8;
+  color: #111827;
+  font-weight: 600;
+  padding: 12px 20px;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideUp 0.4s ease;
+  z-index: 99999;
+}
+
+.toast-icon {
+  font-size: 1.2rem;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.input-text {
+  background: #1f2937;
+  color: #fff;
+  border: 1px solid #374151;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.input-text.error {
+  border-color: #ef4444;
+}
+
+.error-text {
+  font-size: 0.75rem;
+  color: #ef4444;
+  margin-top: 4px;
+}

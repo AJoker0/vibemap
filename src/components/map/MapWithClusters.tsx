@@ -1,6 +1,10 @@
+// src/components/map/MapWithClusters.tsx
+
 'use client';
 
-import { LeafletMap } from './LeafletMap';
+'use client';
+
+import LeafletMap from './LeafletMap'; // ⬅️ ВАЖНО: без фигурных скобок ❗
 
 export default function MapWithClusters() {
   return <LeafletMap />;

@@ -1,3 +1,5 @@
+// src/components/map/MapView.tsx
+
 import MapWithClusters from './MapWithClusters';
 
 export default function MapView() {
