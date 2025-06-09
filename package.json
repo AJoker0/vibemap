@@ -16,7 +16,8 @@
     "serve:db": "json-server --watch db.json --port 5000",
     "db": "json-server --watch db.json --port 5000",
     "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:api\"",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
