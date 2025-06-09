@@ -180,18 +180,14 @@ export default function LeafletMap() {
 
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
-      setGeoStatus('❌ Геолокация не поддерживается!')
       return
     }
     navigator.geolocation.getCurrentPosition(
       ({ coords }) => {
         const loc: [number, number] = [coords.latitude, coords.longitude]
-        setGeoStatus('✅ Координаты получены!')
         setUserLocation(loc)
       },
-      (err) => {
-        setGeoStatus(`❌ Ошибка геолокации: ${err.message}`)
-      }
+      (err) => {}
     )
   }, [])
 
