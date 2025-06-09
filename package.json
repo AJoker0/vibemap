@@ -2,6 +2,7 @@
   "name": "vibemap",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "docker:up": "docker-compose up -d",
@@ -42,6 +43,8 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@eslint/js": "^9.28.0",
+    "@next/eslint-plugin-next": "^15.3.3",
     "@storybook/addon-essentials": "^8.0.6",
     "@storybook/addon-interactions": "^8.0.6",
     "@storybook/manager-api": "^8.6.14",
@@ -71,6 +74,7 @@
     "prettier": "^3.5.3",
     "storybook": "8.0.6",
     "typescript": "^5",
+    "typescript-eslint": "^8.33.1",
     "vite": "^6.3.5"
   }
 }
