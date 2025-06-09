@@ -4,11 +4,9 @@
 
 import dynamic from 'next/dynamic'
 import { useAuth } from '@/context/AuthContext'
-import { useEffect, useState } from 'react'
-import { getProfile } from '@/lib/api'
-import LoginModal from '@/components/auth/LoginModal'
-import RegisterModal from '@/components/auth/RegisterModal'
+import { useEffect } from 'react'
 import AuthButtons from '../components/AuthButtons'
+import { getProfile } from '@/lib/api'
 
 // ⛔ SSR disabled for Leaflet map
 const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), {
@@ -16,15 +14,11 @@ const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), {
 })
 
 export default function HomePage() {
-  const { user, token } = useAuth() // ⬅️ добавлен token
-  const [_showLogin, _setShowLogin] = useState(false)
-  const [showRegister, setShowRegister] = useState(false)
+  const { user, token } = useAuth()
 
-  // 🧠 ⚠️ Пример правильной загрузки профиля
   useEffect(() => {
     const load = async () => {
-      if (!token) return // ⛔ Без токена ничего не грузим
-
+      if (!token) return
       try {
         const data = await getProfile(token)
         console.log('✅ Профиль загружен:', data)
@@ -32,16 +26,11 @@ export default function HomePage() {
         console.error('⚠️ Ошибка загрузки профиля:', err)
       }
     }
-
     load()
-  }, [token]) // 🔁 Зависимость от токена
+  }, [token])
 
   if (!user) {
-    return (
-      <>
-        <AuthButtons />
-      </>
-    )
+    return <AuthButtons />
   }
 
   return <LeafletMap />
