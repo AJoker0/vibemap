@@ -180,14 +180,45 @@ export default function LeafletMap() {
 
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
+      console.error('❌ Geolocation not supported in this browser')
       return
     }
+
     navigator.geolocation.getCurrentPosition(
-      ({ coords }) => {
+      async ({ coords }) => {
+        console.log('📍 Geolocation success:', coords)
         const loc: [number, number] = [coords.latitude, coords.longitude]
+
+        // Проверим точность
+        if (coords.accuracy > 100) {
+          // Если точность плохая — пробуем получить координаты по IP
+          try {
+            const token = process.env.NEXT_PUBLIC_IPINFO_TOKEN
+            const res = await fetch(`https://ipinfo.io/json?token=${token}`)
+            if (res.ok) {
+              const data = await res.json()
+              if (data.loc) {
+                const [lat, lng] = data.loc.split(',').map(Number)
+                setUserLocation([lat, lng])
+                alert(`⚠️ Геолокация по браузеру неточная (${Math.round(coords.accuracy)}м). Используем координаты по IP.`)
+                return
+              }
+            }
+          } catch (e) {
+            console.error('❌ Не удалось получить координаты по IP:', e)
+          }
+        }
         setUserLocation(loc)
       },
-      (_err) => {}
+      (err) => {
+        console.error('❌ Geolocation error:', err)
+        alert('❌ Ошибка геолокации: ' + err.message)
+      },
+      {
+        enableHighAccuracy: true, // 🔥 Приоритет GPS!
+        timeout: 10000,
+        maximumAge: 0,
+      }
     )
   }, [])
 
@@ -267,45 +298,75 @@ export default function LeafletMap() {
     >
       {userLocation && <CountryBadge coords={userLocation} />}
       <div className="top-right-ui">
-        <button
-          className="profile-button"
-          onClick={() => setProfileOpen((p) => !p)}
-        >
-          👤
-        </button>
-        <button
-          className="settings-button"
-          onClick={() => setSettingsOpen(true)}
-        >
-          ⚙️
-        </button>
-        <div className="layer-switch-wrapper">
-          <button
-            onClick={() => setIsLayerSelectorOpen((prev) => !prev)}
-            className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
-          >
-            🌐
-          </button>
-          {isLayerSelectorOpen && (
-            <div className="map-style-popup">
-              <MapLayerSelector
-                layers={[
-                  { id: 'standard', name: 'Standard', icon: '🗺️' },
-                  { id: 'satellite', name: 'Satellite', icon: '🛰️' },
-                  { id: 'relief', name: 'Relief', icon: '🏔️' },
-                  { id: 'dark', name: 'Dark', icon: '🟣' },
-                  { id: 'light', name: 'Light', icon: '🟡' },
-                ]}
-                current={selectedLayer}
-                onSelect={(id) => {
-                  setSelectedLayer(id)
-                  setIsLayerSelectorOpen(false)
-                }}
-              />
-            </div>
-          )}
-        </div>
+  <button
+    className="profile-button"
+    onClick={() => {
+      setProfileOpen((wasOpen) => {
+        if (!wasOpen) setSettingsOpen(false) // Закрываем настройки при открытии профиля
+        return !wasOpen
+      })
+    }}
+    aria-label="Profile"
+    title="Profile"
+  >
+    👤
+  </button>
+
+  <button
+    className="settings-button"
+    onClick={() => {
+      setSettingsOpen((wasOpen) => {
+        if (!wasOpen) setProfileOpen(false) // Закрываем профиль при открытии настроек
+        return true // 💡 всегда true — settings открываются принудительно
+      })
+    }}
+    aria-label="Settings"
+    title="Settings"
+  >
+    ⚙️
+  </button>
+
+  <div className="layer-switch-wrapper">
+    <button
+      onClick={() => {
+        setIsLayerSelectorOpen((wasOpen) => {
+          const newState = !wasOpen
+          if (newState) {
+            setProfileOpen(false)
+            setSettingsOpen(false)
+            setIsOpen(false)
+          }
+          return newState
+        })
+      }}
+      className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
+      aria-label="Map style"
+      title="Map style"
+    >
+      🌐
+    </button>
+
+    {isLayerSelectorOpen && (
+      <div className="map-style-popup">
+        <MapLayerSelector
+          layers={[
+            { id: 'standard', name: 'Standard', icon: '🗺️' },
+            { id: 'satellite', name: 'Satellite', icon: '🛰️' },
+            { id: 'relief', name: 'Relief', icon: '🏔️' },
+            { id: 'dark', name: 'Dark', icon: '🟣' },
+            { id: 'light', name: 'Light', icon: '🟡' },
+          ]}
+          current={selectedLayer}
+          onSelect={(id) => {
+            setSelectedLayer(id)
+            setIsLayerSelectorOpen(false)
+          }}
+        />
       </div>
+    )}
+  </div>
+</div>
+
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {profileOpen && (
         <ProfileModal

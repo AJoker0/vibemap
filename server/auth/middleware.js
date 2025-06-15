@@ -1,7 +1,7 @@
 // server/auth/middleware.js
-const { verifyToken } = require('./jwt');
+import { verifyToken } from './jwt.js';
 
-module.exports = function requireAuth(req, res, next) {
+export default function requireAuth(req, res, next) {
   const auth = req.headers.authorization;
   if (!auth || !auth.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Missing or malformed token' });
@@ -11,10 +11,10 @@ module.exports = function requireAuth(req, res, next) {
 
   try {
     const decoded = verifyToken(token);
-    console.log('🔑 Decoded token:', decoded); // 👈 вот здесь
+    console.log('🔑 Decoded token:', decoded);
     req.user = decoded;
     next();
   } catch (err) {
     return res.status(401).json({ error: 'Invalid token' });
   }
-};
+}

@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import './profile-modal.css'
+
 import { getProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'

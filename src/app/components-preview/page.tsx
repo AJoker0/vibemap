@@ -1,3 +1,5 @@
+//src/app/components-preview/page.tsx
+
 'use client'
 
 import { Button } from '@/components/ui/Button'

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+
   "scripts": {
     "dev": "next dev",
     "docker:up": "docker-compose up -d",
@@ -32,6 +33,7 @@
     "emoji-picker-react": "^4.12.2",
     "express": "^5.1.0",
     "google-auth-library": "^9.15.1",
+    "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.511.0",

@@ -1,7 +1,9 @@
+//src/components/settings/SettingsModal.tsx
+
 'use client'
 
 import { useEffect, useState } from 'react'
-import './settings-modal.css'
+import styles from './settings-modal.module.css';
 import { getProfile, updateProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
 import Image from 'next/image'

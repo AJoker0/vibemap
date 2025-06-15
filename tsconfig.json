@@ -28,12 +28,18 @@
       "@/*": [
         "*"
       ]
-    }
+    },
+    "types": [
+      "node",
+      "express",
+      "react",
+      "react-dom"
+    ]
   },
   "include": [
-    "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
+    "next-env.d.ts",
     ".next/types/**/*.ts"
   ],
   "exclude": [

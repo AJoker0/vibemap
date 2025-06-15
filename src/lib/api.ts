@@ -1,3 +1,5 @@
+// src/lib/api.ts
+
 const BASE_URL = 'http://localhost:5000'
 
 // ✅ Универсальный fetch с токеном

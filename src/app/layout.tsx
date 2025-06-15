@@ -1,3 +1,5 @@
+//src/app/layout.tsx
+import '../components/settings/settings-modal.css'
 import '../styles/globals.css'
 import 'leaflet/dist/leaflet.css'
 import '@/styles/buttons.css' // ⬅️ ВАЖНО: абсолютный путь из root

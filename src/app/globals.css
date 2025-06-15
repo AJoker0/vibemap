@@ -1,5 +1,6 @@
 // Global styles for the map and emoji picker
-
+// src/app/globals.css
+@import '../components/settings/settings-modal.css';
 .button {
   position: absolute;
   top: 1rem;

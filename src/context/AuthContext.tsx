@@ -1,4 +1,4 @@
-// src/context/AuthContext.tsx
+//src/context/AuthContext.tsx
 
 'use client'
 
@@ -26,44 +26,61 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() => {
-    // ⚡ Инициализируем сразу
-    return localStorage.getItem('authToken') || null
-  })
+  const [token, setToken] = useState<string | null>(null)
 
-  // 🛂 Token changes → validate it
+  // ✅ Получаем токен из localStorage безопасно
   useEffect(() => {
-    if (token) {
-      validateToken(token)
+    if (typeof window !== 'undefined') {
+      const storedToken = localStorage.getItem('authToken')
+      // 💡 Убедимся, что это валидный JWT по формату
+      if (
+        storedToken &&
+        typeof storedToken === 'string' &&
+        storedToken.split('.').length === 3
+      ) {
+        setToken(storedToken)
+      } else {
+        localStorage.removeItem('authToken') // 🧹 чистим мусор
+      }
     }
+  }, [])
+
+  // ✅ Проверяем токен при изменении
+  useEffect(() => {
+    const validate = async () => {
+      if (!token) return
+
+      try {
+        const res = await fetch('http://localhost:5000/profile', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (!res.ok) throw new Error('Invalid token')
+
+        const data = await res.json()
+
+        setUser({
+          id: data.userId || data.id || 'unknown',
+          email: data.email || 'anonymous',
+        })
+      } catch (err) {
+        console.error('❌ Token validation failed:', err)
+        logout()
+      }
+    }
+
+    validate()
   }, [token])
 
-  const validateToken = async (token: string) => {
-    try {
-      const res = await fetch('http://localhost:5000/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!res.ok) throw new Error('Invalid token')
-
-      const data = await res.json()
-      setUser({
-        id: data.userId || data.id || 'unknown',
-        email: data.email || 'anonymous',
-      })
-    } catch (err) {
-      console.error('❌ Token validation failed:', err)
-      logout()
-    }
-  }
-
+  // ✅ Установка токена при входе
   const login = (newToken: string) => {
     localStorage.setItem('authToken', newToken)
-    setToken(newToken) // ✅ validate произойдёт в useEffect
+    setToken(newToken)
   }
 
+  // ✅ Удаление токена и состояния
   const logout = () => {
     localStorage.removeItem('authToken')
     setUser(null)
@@ -77,7 +94,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   )
 }
 
-// 🧪 Safe Hook
+// ✅ Безопасный хук
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (context === undefined) {
