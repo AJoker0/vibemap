@@ -136,6 +136,13 @@ cd vibemap
 pnpm install
 pnpm dev
 ```
+### 🔧 4. All
+
+```bash
+pnpm dev:all
+```
+
+
 
 Open frontend:
 📡 [http://localhost:3000](http://localhost:3000)
