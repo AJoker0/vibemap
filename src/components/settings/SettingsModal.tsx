@@ -1,9 +1,12 @@
 //src/components/settings/SettingsModal.tsx
 
 'use client'
-
+import './settings-modal.css'
 import { useEffect, useState } from 'react'
-import styles from './settings-modal.module.css';
+import { signOut } from 'next-auth/react' // 👈 обязательно!
+
+const { logout } = useAuth() // 👈 тоже нужно
+
 import { getProfile, updateProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
 import Image from 'next/image'
@@ -37,10 +40,15 @@ export function SettingsModal({ onClose }: Props) {
 
   const { token } = useAuth() // ✅ ВЫНЕС token в scope всего компонента
 
-  const handleLogout = () => {
-    localStorage.removeItem('authToken')
-    window.location.href = '/login' // или другой маршрут, если нужен
+  const handleLogout = async () => {
+  try {
+    logout() // 🧼 удалить токен из AuthContext
+    await signOut({ callbackUrl: '/login' }) // 🧼 завершить Google/NextAuth сессию
+  } catch (err) {
+    console.error('❌ Logout failed:', err)
   }
+}
+
 
   useEffect(() => {
     const handleEsc = (e: KeyboardEvent) => {

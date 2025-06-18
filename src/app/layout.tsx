@@ -1,22 +1,20 @@
-//src/app/layout.tsx
-import '../components/settings/settings-modal.css'
-import '../styles/globals.css'
-import 'leaflet/dist/leaflet.css'
-import '@/styles/buttons.css' // ⬅️ ВАЖНО: абсолютный путь из root
-// src/app/layout.tsx or wherever you include global styles
-import '@/styles/country-badge.css'
+// src/app/layout.tsx
 
-import { AuthProvider } from '@/context/AuthContext'
+'use client'
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+import { SessionProvider } from 'next-auth/react'
+import { AuthProvider } from '@/context/AuthContext' // 🔥 ВАЖНО!
+import './globals.css'
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <SessionProvider>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </SessionProvider>
       </body>
     </html>
   )

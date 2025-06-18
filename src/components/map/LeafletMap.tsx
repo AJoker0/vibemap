@@ -1,3 +1,5 @@
+// LeafletMap.tsx
+
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -11,7 +13,8 @@ import {
 } from 'react-leaflet'
 import Supercluster from 'supercluster'
 import type { Feature, Point } from 'geojson'
-import L from 'leaflet'
+import * as L from 'leaflet';
+
 import '@/styles/buttons.css'
 import { VibeSelector } from './VibeSelector'
 import './vibe-selector.css'
