@@ -1,4 +1,4 @@
-
+colab
 # 🌍 VIBEMAP — **Real-time Mood Mapping Platform**
 
 > Social vibes meet interactive maps. Drop your emotion, discover your friends, visualize your world.
