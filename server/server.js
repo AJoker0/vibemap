@@ -18,20 +18,25 @@ app.use((req, res, next) => {
 
 
 // ✅ CORS
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-}));
-app.options('*', cors());
+app.use((req, res, next) => {
+  console.log(`[LOG] ${req.method} ${req.url} | Headers:`, req.headers)
+  next()
+})
+app.use(
+  cors({
+    origin: 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+)
+app.options('*', cors())
+app.use(express.json({ limit: '8mb' }))
+app.use(helmet())
 
-// ✅ JSON и безопасность
-app.use(express.json({ limit: '8mb' }));
-app.use(helmet());
-
-// ✅ Mongo
-const client = new MongoClient('mongodb://localhost:27017/vibemap');
+const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/vibemap'
+console.log('📦 Connecting to MongoDB at', mongoUri)
+const client = new MongoClient(mongoUri)
 let db;
 
 client.connect().then(() => {
@@ -107,6 +112,7 @@ client.connect().then(() => {
 
 }).catch((err) => {
   console.error('❌ MongoDB connection failed:', err);
+  process.exit(1);
 });
 
 app.listen(port, () => {
