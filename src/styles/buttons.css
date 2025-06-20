@@ -31,6 +31,22 @@
   background: linear-gradient(135deg, #6366f1, #3b82f6);
 }
 
+.button.find-me.finding {
+  animation: pulseFindMe 1.5s infinite alternate ease-in-out;
+  background: linear-gradient(135deg, #4f46e5, #1e40af);
+}
+
+@keyframes pulseFindMe {
+  0% {
+    transform: translateX(-50%) scale(0.96);
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.04);
+    opacity: 1;
+  }
+}
+
 .button.vibe {
   background: linear-gradient(135deg, #ec4899, #f43f5e);
 }

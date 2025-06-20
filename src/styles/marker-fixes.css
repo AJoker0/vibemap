@@ -1,0 +1,261 @@
+/* PERFORMANCE OPTIMIZATIONS: Enhanced map performance and smoothness */
+
+/* Apply hardware acceleration to map container */
+.leaflet-container {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform;
+  -webkit-font-smoothing: subpixel-antialiased;
+  z-index: 0;
+  /* Smoother panning */
+  transition: transform 0.1ms linear;
+}
+
+/* Optimize markers positioning and visibility */
+.leaflet-marker-icon, .leaflet-marker-shadow {
+  transform: translateZ(0) !important;
+  will-change: transform;
+  transition: transform 0.1s ease-out !important;
+}
+
+/* Fix for user location marker to stay on top */
+.user-location-marker {
+  z-index: 1000 !important;
+  transform: translate3d(0, 0, 0) !important;
+  transform-origin: center bottom !important;
+  will-change: transform !important;
+  transform-style: preserve-3d !important;
+  backface-visibility: hidden !important;
+  pointer-events: auto !important;
+  position: relative !important;
+}
+
+/* Ensure marker panes have proper z-index */
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+/* Prevent image rendering issues */
+.user-location-marker img {
+  transform: translateZ(0) !important;
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Fix position during zoom */
+.leaflet-zoom-animated.leaflet-zoom-anim .user-location-marker {
+  transition: none !important;
+}
+
+/* Higher z-index for popup related to user location */
+.leaflet-popup {
+  z-index: 1001 !important;
+}
+
+/* Optimize tiles */
+.leaflet-tile {
+  transform: translateZ(0);
+  will-change: transform, opacity;
+  image-rendering: high-quality; /* Modern browsers */
+}
+
+/* Pulsing animation for user marker */
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Fix popup display */
+.leaflet-popup-pane {
+  z-index: 700 !important;
+}
+
+/* Make marker text more visible */
+.location-popup {
+  text-align: center;
+  font-weight: bold;
+  font-size: 14px;
+  padding: 2px;
+}
+
+.location-coords {
+  font-size: 12px;
+  color: #555;
+  margin-top: 5px;
+  font-family: monospace;
+}
+
+/* Performance optimizations */
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+  /* Disable certain animations on mobile */
+  .leaflet-fade-anim .leaflet-tile,
+  .leaflet-fade-anim .leaflet-popup {
+    transition: none !important;
+  }
+  
+  /* Force simpler rendering on mobile */
+  .leaflet-container { 
+    outline: none;
+  }
+
+  /* Faster tap response */
+  .leaflet-container { 
+    touch-action: manipulation;
+  }
+}
+
+/* Loading indicator styles */
+.map-loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  z-index: 999;
+  animation: map-spinner-rotate 1s infinite linear;
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+  pointer-events: none;
+}
+
+.map-wrapper.loading .map-loading-spinner {
+  opacity: 0.7;
+}
+
+@keyframes map-spinner-rotate {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Smoother tile loading */
+.leaflet-container .leaflet-overlay-pane svg,
+.leaflet-container .leaflet-marker-pane img,
+.leaflet-container .leaflet-shadow-pane img,
+.leaflet-container .leaflet-tile-pane img,
+.leaflet-container img.leaflet-image-layer {
+  max-width: none !important;
+  will-change: transform;
+}
+
+/* Smoother animations for the find me button */
+.button.find-me {
+  transform: translate3d(0,0,0);
+  will-change: transform, opacity;
+  transition: transform 0.2s ease-out, opacity 0.3s ease-out;
+}
+
+/* Flash for finding location */
+.button.find-me.finding {
+  animation: flash-finding 1.5s infinite;
+}
+
+@keyframes flash-finding {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}
+
+/* Smooth animations for map elements */
+.leaflet-zoom-animated {
+  transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* Improved visibility for popup content */
+.leaflet-popup-content-wrapper {
+  box-shadow: 0 3px 14px rgba(0,0,0,0.25) !important;
+  border-radius: 12px !important;
+}
+
+/* Better popup tips */
+.leaflet-popup-tip {
+  box-shadow: 0 3px 14px rgba(0,0,0,0.25) !important;
+}
+
+/* Fix for Find Me button */
+.button.find-me {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.button.find-me.finding {
+  background-color: #4a8af5;
+  box-shadow: 0 0 15px rgba(74, 138, 245, 0.5);
+}
+
+.button.find-me.finding::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: loading-shine 1.5s infinite;
+}
+
+@keyframes loading-shine {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Fix for Find Me button text during loading */
+.button.find-me.finding .icon {
+  animation: spin 1.5s infinite linear;
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* High priority marker class for important markers */
+.high-priority-marker {
+  z-index: 9999 !important;
+  filter: drop-shadow(0 0 8px rgba(0,0,0,0.6));
+}
+
+/* Ensure markers stay visible during zoom */
+.leaflet-zoom-animated .user-location-marker {
+  transform: translate3d(0, 0, 9999px) !important;
+  transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+}
+
+/* Prevent map tile loading issues */
+.leaflet-tile {
+  visibility: visible !important;
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Improved map dragging performance */
+.leaflet-dragging .leaflet-marker-icon {
+  transition: none !important;
+}

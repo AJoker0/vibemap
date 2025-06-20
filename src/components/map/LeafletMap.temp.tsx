@@ -10,10 +10,9 @@ import {
   useMapEvents,
   ZoomControl,
 } from 'react-leaflet'
-import MapTileProxyHandler from './MapTileProxyHandler'
-import LocationMarkerFix from './LocationMarkerFix'
-import FindMeOptimizer from './FindMeOptimizer'
-import UserLocationMarker from './UserLocationMarker'
+import { MapTileProxyHandler, LocationMarkerFix, FindMeOptimizer } from './MapOptimizers'
+import { TileProxyHandler } from './TileProxyHandler'
+import '@/styles/marker-fixes.css' // Enhanced performance optimizations
 import Supercluster from 'supercluster'
 import type { Feature, Point } from 'geojson'
 import * as L from 'leaflet';
@@ -72,17 +71,21 @@ const defaultPoints: PointData[] = [
   { id: 2, lat: 42.6988, lng: 23.322, title: 'Sofia North' },
 ]
 
-// Create a more visible user icon with pulsing effect
 const userIcon = new L.Icon({
   iconUrl: '/user-map-location.png',
-  iconSize: [40, 40], // Larger size for better visibility
-  iconAnchor: [20, 40], // Center bottom of image
-  popupAnchor: [0, -35], // Position popup above icon
-  className: 'user-location-marker pulse-animation',
+  iconSize: [32, 32],
+  iconAnchor: [16, 32],
+  popupAnchor: [0, -28],
+  className: 'user-location-marker',
   // Disable shadows for better performance
   shadowUrl: undefined,
   // Make marker image crisp on retina displays
-  iconRetinaUrl: '/user-map-location.png'
+  iconRetinaUrl: '/user-map-location.png',
+  // Ensure marker stays on top
+  pane: 'markerPane',
+  // Add custom rendering properties
+  riseOnHover: true,
+  riseOffset: 1000
 })
 
 function Clusters({ points }: { points: PointData[] }) {
@@ -200,22 +203,8 @@ export default function LeafletMap() {
       return
     }
 
-    // Function to verify coordinate correctness
-    const verifyCoordinates = (coords: any): [number, number] | null => {
-      if (!Array.isArray(coords) || coords.length !== 2) return null;
-      
-      const [lat, lng] = coords;
-      if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-      if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        // Try swapping to see if that makes valid coordinates
-        if (lng >= -90 && lng <= 90 && lat >= -180 && lat <= 180) {
-          return [lng, lat]; // Return swapped coordinates
-        }
-        return null;
-      }
-      
-      return [lat, lng];
-    };
+    // Set up a loading indicator
+    setMapLoading(true);
 
     // Store location in localStorage to improve persistence
     const savedLocation = localStorage.getItem('user-last-location');
@@ -223,21 +212,16 @@ export default function LeafletMap() {
     
     if (savedLocation) {
       try {
-        const parsed = JSON.parse(savedLocation);
-        const verified = verifyCoordinates(parsed);
-        
-        if (verified) {
-          fallbackLocation = verified;
-          console.log('Using verified saved location:', verified);
+        const [lat, lng] = JSON.parse(savedLocation);
+        if (typeof lat === 'number' && typeof lng === 'number') {
+          fallbackLocation = [lat, lng];
           // Use saved location immediately while waiting for a more accurate one
           setUserLocation(fallbackLocation);
-        } else {
-          console.error('Invalid saved coordinates:', parsed);
-          localStorage.removeItem('user-last-location');
+          // Since we have fallback, we can hide loading state sooner
+          setTimeout(() => setMapLoading(false), 500);
         }
       } catch (e) {
         console.error('Failed to parse saved location', e);
-        localStorage.removeItem('user-last-location');
       }
     }
 
@@ -354,6 +338,15 @@ export default function LeafletMap() {
         const styleEl = document.createElement('style');
         styleEl.id = styleId;
         styleEl.textContent = `
+          /* Apply hardware acceleration to the map container for smoother performance */
+          .leaflet-container {
+            transform: translate3d(0, 0, 0);
+            backface-visibility: hidden;
+            perspective: 1000px;
+            will-change: transform;
+            -webkit-font-smoothing: subpixel-antialiased;
+          }
+
           /* Ensure map markers remain stable during animations */
           .leaflet-marker-icon, .leaflet-marker-shadow {
             transform: translateZ(0) !important;
@@ -365,12 +358,53 @@ export default function LeafletMap() {
           .user-location-marker {
             z-index: 1000 !important;
           }
+
+          /* Optimize tile transitions */
+          .leaflet-tile {
+            transform: translateZ(0);
+            will-change: transform, opacity;
+          }
+
+          /* Smooth panning */
+          .leaflet-container {
+            scroll-behavior: smooth;
+          }
         `;
         document.head.appendChild(styleEl);
       }
     };
     
     addCustomStyles();
+
+    // Disable certain animations on mobile devices for better performance
+    const disableHeavyAnimations = () => {
+      const isMobile = window.innerWidth < 768 || 
+                      ('ontouchstart' in window) || 
+                      (navigator.maxTouchPoints > 0);
+      
+      if (isMobile) {
+        L.DomUtil.addClass(document.body, 'mobile-map-optimizations');
+      }
+    };
+
+    disableHeavyAnimations();
+      // Performance optimization: Add frame throttling for smoother panning
+    const throttleMapAnimations = () => {
+      // Define a custom property using type assertion
+      const originalPanBy = L.Map.prototype.panBy;
+      L.Map.prototype.panBy = function(offset, options) {
+        const map = this as any; // Type assertion to avoid TS errors
+        if (!map._panAnimRequestId) {
+          map._panAnimRequestId = requestAnimationFrame(() => {
+            originalPanBy.call(this, offset, options);
+            map._panAnimRequestId = null;
+          });
+        }
+        return this;
+      };
+    };
+    
+    throttleMapAnimations();
   }, []);
 
   useEffect(() => {
@@ -413,7 +447,7 @@ export default function LeafletMap() {
         setUserFriends(friends);
         setVisitedCities(cities);
       } catch (error) {
-        console.error('💥 Ошибка при загрузке данных:', error);
+        console.error('💥 Error loading data:', error);
       }
     };
     if (token) fetchData();
@@ -433,69 +467,61 @@ export default function LeafletMap() {
   }, []);
     const centerMapToUser = () => {
     if (mapRef.current && userLocation) {
-      // Verify coordinates are in correct format
-      const verifyLocation = (loc: [number, number]): boolean => {
-        const [lat, lng] = loc;
-        return (
-          typeof lat === 'number' && 
-          typeof lng === 'number' &&
-          lat >= -90 && lat <= 90 &&
-          lng >= -180 && lng <= 180
-        );
-      };
-      
-      if (!verifyLocation(userLocation)) {
-        console.error('❌ Invalid coordinates for centering map:', userLocation);
-        // Force a new geolocation lookup instead of using invalid coordinates
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            ({coords}) => {
-              const validLocation: [number, number] = [coords.latitude, coords.longitude];
-              setUserLocation(validLocation);
-              mapRef.current?.flyTo(validLocation, 15, {animate: true});
-              localStorage.setItem('user-last-location', JSON.stringify(validLocation));
-            },
-            (error) => console.error('❌ Geolocation error:', error),
-            {enableHighAccuracy: true, timeout: 10000, maximumAge: 0}
-          );
-        }
-        return;
-      }
-      
-      // Immediately fly to current known position first for responsive UI
-      // This gives instant feedback to the user while we fetch a more accurate position
-      mapRef.current.flyTo(userLocation, 15, {
-        animate: true,
-        duration: 1
-      });
-      
       // Show visual feedback that location is being updated
       const button = document.querySelector('.button.find-me');
       if (button) {
         button.textContent = '📍 Finding...';
         button.classList.add('finding');
+        
+        // Add a style for smoother animation
+        button.setAttribute('style', 'transform: translateZ(0); will-change: transform;');
       }
       
       // Trigger the "hiding" of the button immediately for better UX
       setShowFindMe(false);
+      
+      // First pan to the location smoothly (smoother than flyTo)
+      // This provides instant feedback
+      mapRef.current.setView(userLocation, mapRef.current.getZoom(), {
+        animate: true,
+        duration: 0.3,
+        easeLinearity: 0.25,
+        noMoveStart: true // Prevents triggering unnecessary events
+      });
+      
+      // Prepare for smoother zoom animation
+      setTimeout(() => {
+        // Then smoothly zoom in to user's location
+        mapRef.current?.flyTo(userLocation, 15, {
+          animate: true,
+          duration: 0.8, // Faster animation for better UX
+          easeLinearity: 0.2, // More natural easing
+          noMoveStart: true // Prevents triggering unnecessary events
+        });
+      }, 100); // Small timeout to separate pan from zoom for smoother feel
       
       // Then try to get more current position with shorter timeout
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           ({ coords }) => {
             const freshLocation: [number, number] = [coords.latitude, coords.longitude];
-            console.log('📍 New fresh location:', freshLocation);
             
-            setUserLocation(freshLocation);
-            
-            // Adjust to the fresh location with smoother animation
-            mapRef.current?.flyTo(freshLocation, 15, {
-              animate: true,
-              duration: 0.8, // faster animation
-              easeLinearity: 0.2
-            });
-            
-            localStorage.setItem('user-last-location', JSON.stringify(freshLocation));
+            // Only update if position has changed significantly to avoid unnecessary movement
+            const distanceMoved = mapRef.current ? 
+              mapRef.current.distance(userLocation, freshLocation) : 0;
+              
+            if (distanceMoved > 10) { // Only move if more than 10 meters different
+              setUserLocation(freshLocation);
+              
+              // Adjust to the fresh location with smoother animation
+              mapRef.current?.panTo(freshLocation, {
+                animate: true,
+                duration: 0.6,
+                easeLinearity: 0.1 // Very smooth panning
+              });
+              
+              localStorage.setItem('user-last-location', JSON.stringify(freshLocation));
+            }
           },
           () => {
             // If getting current position fails, we already moved to the last known position
@@ -504,16 +530,9 @@ export default function LeafletMap() {
           {
             enableHighAccuracy: true,
             timeout: 5000, // shorter timeout for better response
-            maximumAge: 30000 // Accept positions up to 30 seconds old for faster response
+            maximumAge: 10000 // Accept positions up to 10 seconds old for faster response
           }
         );
-      } else {
-        // Fallback if geolocation is not available
-        mapRef.current.flyTo(userLocation, 15, {
-          animate: true,
-          duration: 1
-        });
-        setShowFindMe(false);
       }
     }
   };
@@ -622,20 +641,25 @@ export default function LeafletMap() {
             Error loading map: {mapError}
             <button onClick={() => window.location.reload()}>Try Again</button>
           </div>
-        )}
-          <MapContainer
+        )}          <MapContainer
           center={userLocation}
-          zoom={13}
-          scrollWheelZoom={true}
+          zoom={13}          scrollWheelZoom={true}
           attributionControl={true}
           zoomControl={false}
-          style={{ height: '100%', width: '100%' }}
-          // Better performance settings
-          zoomAnimation={true}
-          fadeAnimation={true}
-          markerZoomAnimation={true}
-          preferCanvas={true}
-          renderer={L.canvas()}
+          style={{ 
+            height: '100%', 
+            width: '100%',
+            // Add hardware acceleration for smoother rendering
+            transform: 'translate3d(0,0,0)',
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden'
+          }}
+          // Performance optimized settings
+          zoomAnimation={window.innerWidth > 768} // Disable on mobile
+          fadeAnimation={window.innerWidth > 768} // Disable on mobile
+          markerZoomAnimation={false} // Disable for better performance
+          preferCanvas={true} // Use canvas renderer for better performance
+          renderer={L.canvas({ padding: 0.5 })}
           // Add world boundary limits
           minZoom={2}
           maxZoom={18}
@@ -647,7 +671,7 @@ export default function LeafletMap() {
               mapRef.current = ref;
               // Apply smoother panning settings
               ref.options.inertia = true;
-              ref.options.inertiaDeceleration = 2000; // Lower value for smoother feel
+              ref.options.inertiaDeceleration = 3000; // Higher value for smoother inertia
               ref.options.inertiaMaxSpeed = 1500; // Lower for smoother panning
               ref.options.zoomSnap = 0.5;
               ref.options.zoomDelta = 0.5;
@@ -682,9 +706,8 @@ export default function LeafletMap() {
               selectedLayer === 'standard'
                 ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
                 : selectedLayer === 'satellite'
-                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-                : selectedLayer === 'relief'
-                ? 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
+                ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'                : selectedLayer === 'relief'
+                ? '/api/tile-proxy?url=https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png'
                 : selectedLayer === 'dark'
                 ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'
                 : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
@@ -692,16 +715,55 @@ export default function LeafletMap() {
             errorTileUrl="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
             maxZoom={19}
             tileSize={256}
-            keepBuffer={3} // Reduce memory usage
-            updateWhenZooming={false}
-            updateWhenIdle={true}
+            keepBuffer={5} // Increase buffer for smoother scrolling
+            updateWhenZooming={false} // Don't update tiles during zoom
+            updateWhenIdle={true} // Only update when user stops moving
             zoomOffset={0}
             zIndex={1}
-            detectRetina={true}            // Cache settings
+            detectRetina={true}
             crossOrigin="anonymous"
             subdomains="abc"
             className="map-tiles"
-          />          <UserLocationMarker userLocation={userLocation} userIcon={userIcon} />
+            eventHandlers={{
+              loading: () => {
+                setMapLoading(true);
+              },
+              load: () => {
+                setMapLoading(false);
+              },
+              tileerror: (e) => {
+                console.warn('Tile error - attempting to reload', e);
+                // Don't show errors for brief connection issues
+                setTimeout(() => {
+                  if (document.querySelectorAll('.leaflet-tile-loaded').length < 5) {
+                    setMapError('Map tile loading issues. Check your connection.');
+                  }
+                }, 3000);
+              }
+            }}
+            // Add preload of adjacent tiles for smoother experience
+            bounds={mapRef.current?.getBounds()}
+            // Enable pane to control rendering order and optimize
+            pane="tilePane"
+          />          <Marker 
+            position={userLocation} 
+            icon={userIcon}
+            zIndexOffset={1000}
+            pane="markerPane"
+            eventHandlers={{
+              add: (e) => {
+                // Force the marker element to have the highest z-index
+                const el = e.target.getElement();
+                if (el) {
+                  el.style.zIndex = "1000";
+                  el.style.transform = "translate3d(0,0,0)";
+                  el.style.position = "relative";
+                }
+              }
+            }}
+          >
+            <Popup>🧍 You are here!</Popup>
+          </Marker>
 
           {selectedEmoji && (
             <Marker
@@ -720,10 +782,10 @@ export default function LeafletMap() {
           <MapWatcher
             userLocation={userLocation}
             onMoveAway={() => setShowFindMe(true)}
-          />
-          <ZoomControl position="bottomright" />
+          />          <ZoomControl position="bottomright" />
           <MapTileProxyHandler />
           <LocationMarkerFix />
+          <TileProxyHandler />
         </MapContainer>
       </div>
 

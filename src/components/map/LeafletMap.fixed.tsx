@@ -10,10 +10,9 @@ import {
   useMapEvents,
   ZoomControl,
 } from 'react-leaflet'
-import MapTileProxyHandler from './MapTileProxyHandler'
-import LocationMarkerFix from './LocationMarkerFix'
-import FindMeOptimizer from './FindMeOptimizer'
+import { MapTileProxyHandler, LocationMarkerFix, FindMeOptimizer } from './MapOptimizers'
 import UserLocationMarker from './UserLocationMarker'
+import '@/styles/marker-fixes.css' // Enhanced performance optimizations
 import Supercluster from 'supercluster'
 import type { Feature, Point } from 'geojson'
 import * as L from 'leaflet';
@@ -622,32 +621,45 @@ export default function LeafletMap() {
             Error loading map: {mapError}
             <button onClick={() => window.location.reload()}>Try Again</button>
           </div>
-        )}
-          <MapContainer
+        )}          <MapContainer
           center={userLocation}
           zoom={13}
           scrollWheelZoom={true}
           attributionControl={true}
           zoomControl={false}
-          style={{ height: '100%', width: '100%' }}
-          // Better performance settings
-          zoomAnimation={true}
-          fadeAnimation={true}
-          markerZoomAnimation={true}
-          preferCanvas={true}
-          renderer={L.canvas()}
+          style={{ 
+            height: '100%', 
+            width: '100%',
+            // Add hardware acceleration for smoother rendering
+            transform: 'translate3d(0,0,0)',
+            WebkitBackfaceVisibility: 'hidden',
+            backfaceVisibility: 'hidden'
+          }}
+          // Performance optimized settings
+          zoomAnimation={window.innerWidth > 768} // Disable on mobile
+          fadeAnimation={window.innerWidth > 768} // Disable on mobile
+          markerZoomAnimation={false} // Disable for better performance
+          preferCanvas={true} // Use canvas renderer for better performance
+          renderer={L.canvas({ padding: 0.5 })}
           // Add world boundary limits
           minZoom={2}
           maxZoom={18}
           worldCopyJump={true}
+          doubleClickZoom={true}
+          dragging={true}
+          inertia={true}
+          inertiaDeceleration={3000} // Higher value for smoother inertia
+          inertiaMaxSpeed={1500} // Lower for more control
+          easeLinearity={0.1} // Smoother animations
           // Don't use maxBounds as it can cause stuttering
-          // Use preferCanvas for better mobile performance
           ref={(ref) => {
             if (ref && !mapRef.current) {
               mapRef.current = ref;
+              
               // Apply smoother panning settings
-              ref.options.inertia = true;
-              ref.options.inertiaDeceleration = 2000; // Lower value for smoother feel
+              ref.options.wheelDebounceTime = 100; // Debounce wheel events
+              ref.options.wheelPxPerZoomLevel = 80; // More zoom per scroll
+              ref.options.tap = true; // Enable tap handler for mobile
               ref.options.inertiaMaxSpeed = 1500; // Lower for smoother panning
               ref.options.zoomSnap = 0.5;
               ref.options.zoomDelta = 0.5;
@@ -692,15 +704,34 @@ export default function LeafletMap() {
             errorTileUrl="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
             maxZoom={19}
             tileSize={256}
-            keepBuffer={3} // Reduce memory usage
-            updateWhenZooming={false}
-            updateWhenIdle={true}
+            keepBuffer={5} // Increase buffer for smoother scrolling
+            updateWhenZooming={false} // Don't update tiles during zoom
+            updateWhenIdle={true} // Only update when user stops moving
             zoomOffset={0}
             zIndex={1}
-            detectRetina={true}            // Cache settings
+            detectRetina={true}
             crossOrigin="anonymous"
             subdomains="abc"
             className="map-tiles"
+            eventHandlers={{
+              loading: () => {
+                setMapLoading(true);
+              },
+              load: () => {
+                setMapLoading(false);
+              },
+              tileerror: (e) => {
+                console.warn('Tile error - attempting to reload', e);
+                // Don't show errors for brief connection issues
+                setTimeout(() => {
+                  if (document.querySelectorAll('.leaflet-tile-loaded').length < 5) {
+                    setMapError('Map tile loading issues. Check your connection.');
+                  }
+                }, 3000);
+              }
+            }}
+            // Enable pane to control rendering order and optimize
+            pane="tilePane"
           />          <UserLocationMarker userLocation={userLocation} userIcon={userIcon} />
 
           {selectedEmoji && (

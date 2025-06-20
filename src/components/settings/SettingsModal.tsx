@@ -5,7 +5,7 @@ import './settings-modal.css'
 import { useEffect, useState } from 'react'
 import { signOut } from 'next-auth/react' // 👈 обязательно!
 
-const { logout } = useAuth() // 👈 тоже нужно
+
 
 import { getProfile, updateProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
@@ -31,7 +31,7 @@ export function SettingsModal({ onClose }: Props) {
     username: '',
     notifications: false,
   })
-
+  const { logout } = useAuth() // 👈 тоже нужно
   const [toastVisible, setToastVisible] = useState(false)
   const [username, setUsername] = useState('')
   const [usernameError, setUsernameError] = useState('')

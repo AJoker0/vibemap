@@ -1,0 +1,104 @@
+/* Map styles */
+.leaflet-container {
+  width: 100%;
+  height: 100vh;
+  z-index: 1;
+  background-color: #f8f8f8;
+}
+
+/* Ensure map container takes full space */
+.map-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+/* Fix for tile loading and visibility */
+.leaflet-tile {
+  image-rendering: auto !important;
+  visibility: visible !important;
+  will-change: auto;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Reset any transformations that might break tiles */
+.leaflet-tile-container {
+  transform-origin: 0 0 !important;
+}
+
+/* Ensure layers don't have broken positioning */
+.leaflet-layer,
+.leaflet-pane {
+  z-index: auto !important;
+  position: absolute !important;
+}
+
+/* Improve user marker appearance */
+.user-location-marker {
+  filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.5));
+  z-index: 1000 !important;
+  transform: translateZ(0);
+  transition: transform 0.2s ease-out !important;
+  will-change: transform;
+}
+
+/* Fix for marker animations */
+.leaflet-zoom-animated {
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Improve performance for markers */
+.leaflet-marker-icon {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Enhanced for marker pane to keep markers visible during zoom */
+.leaflet-marker-pane {
+  z-index: 600 !important;
+}
+
+/* Better handling of popup positioning */
+.leaflet-popup {
+  z-index: 700;
+  transform: translateZ(0);
+}
+
+/* Improve clustering stability */
+.marker-cluster {
+  transform: translateZ(0);
+  will-change: transform;
+  z-index: 599;
+}
+
+/* Map spinner for when tiles are loading */
+.map-loading-spinner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  animation: spin 1.5s infinite linear;
+  z-index: 999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.map-wrapper.loading .map-loading-spinner {
+  opacity: 1;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Improve popup styles */
+.leaflet-popup-content-wrapper {
+  border-radius: 12px;
+  padding: 2px;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}

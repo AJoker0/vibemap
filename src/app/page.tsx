@@ -8,8 +8,8 @@ import { useEffect } from 'react'
 import AuthButtons from '../components/AuthButtons'
 import { getProfile } from '@/lib/api'
 
-// ⛔ SSR disabled for Leaflet map
-const LeafletMap = dynamic(() => import('@/components/map/LeafletMap'), {
+// ⛔ SSR disabled for Leaflet map - Ensure we use the latest optimized version
+const LeafletMap = dynamic(() => import('@/components/map/LeafletMap.fixed'), {
   ssr: false,
 })
 

@@ -28,7 +28,6 @@ export default function (db) {
     const token = signToken({ id: result.insertedId.toString(), email });
     res.json({ token });
   });
-
   router.post('/login', async (req, res) => {
     const { email, password } = req.body;
     const user = await db.collection('users').findOne({ email });
@@ -37,7 +36,8 @@ export default function (db) {
     const match = await bcrypt.compare(password, user.password);
     if (!match) return res.status(401).json({ error: 'Invalid password' });
 
-    const token = signToken({   id: user._id.toString(), email }); // 👈 Сохраняем поле "_id"
+    // Pass the entire user object with _id to signToken
+    const token = signToken(user);
     res.json({ token });
   });
 
