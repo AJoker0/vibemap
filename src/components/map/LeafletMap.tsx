@@ -376,7 +376,9 @@ export default function LeafletMap() {
             <VibeSelector
               onSelect={async (emoji: string) => {
                 setSelectedEmoji(emoji)
-                localStorage.setItem('user-mood', emoji)
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('user-mood', emoji)
+                }
                 if (userLocation) {
                   const city = await getCityFromCoords(
                     userLocation[0],

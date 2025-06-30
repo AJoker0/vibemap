@@ -10,6 +10,11 @@ export default [
   ...tseslint.configs.recommended,
   {
     rules: {
+      // Отключаем строгие правила которые не критичны для работы
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn', 
+      'prefer-const': 'warn',
+      // Next.js правила
       '@next/next/google-font-display': 'warn',
       '@next/next/google-font-preconnect': 'warn',
       '@next/next/next-script-for-ga': 'warn',

@@ -8,7 +8,13 @@ import { Avatar } from '@/components/ui/Avatar'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Modal } from '@/components/ui/Modal'
 import { useState } from 'react'
-import MapView from '@/components/map/MapView' // ✅ без {}
+import dynamic from 'next/dynamic'
+
+// Динамический импорт карты чтобы избежать SSR ошибок
+const MapView = dynamic(() => import('@/components/map/MapView'), {
+  ssr: false,
+  loading: () => <div>Загрузка карты...</div>,
+})
 
 export default function ComponentPreview() {
   const [open, setOpen] = useState(false)

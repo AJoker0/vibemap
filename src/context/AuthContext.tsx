@@ -26,10 +26,17 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [token, setToken] = useState<string | null>(() => {
-    // ⚡ Инициализируем сразу
-    return localStorage.getItem('authToken') || null
-  })
+  const [token, setToken] = useState<string | null>(null)
+
+  // 🛂 Initialize token from localStorage on client side only
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedToken = localStorage.getItem('authToken')
+      if (savedToken) {
+        setToken(savedToken)
+      }
+    }
+  }, [])
 
   // 🛂 Token changes → validate it
   useEffect(() => {
@@ -60,12 +67,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const login = (newToken: string) => {
-    localStorage.setItem('authToken', newToken)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('authToken', newToken)
+    }
     setToken(newToken) // ✅ validate произойдёт в useEffect
   }
 
   const logout = () => {
-    localStorage.removeItem('authToken')
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+    }
     setUser(null)
     setToken(null)
   }

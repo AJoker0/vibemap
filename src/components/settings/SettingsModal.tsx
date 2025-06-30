@@ -36,8 +36,10 @@ export function SettingsModal({ onClose }: Props) {
   const { token } = useAuth() // ✅ ВЫНЕС token в scope всего компонента
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken')
-    window.location.href = '/login' // или другой маршрут, если нужен
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+      window.location.href = '/login' // или другой маршрут, если нужен
+    }
   }
 
   useEffect(() => {
