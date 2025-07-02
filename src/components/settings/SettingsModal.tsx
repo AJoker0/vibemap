@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import './settings-modal.css'
 import { getProfile, updateProfile } from '@/lib/api'
-import { useAuth } from '@/context/AuthContext' // ✅ ДОБАВИЛ ЭТО
+import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 
 type Profile = {
@@ -29,16 +29,17 @@ export function SettingsModal({ onClose }: Props) {
 
   const [toastVisible, setToastVisible] = useState(false)
   const [username, setUsername] = useState('')
+  const [originalUsername, setOriginalUsername] = useState('')
   const [usernameError, setUsernameError] = useState('')
   const [notifications, setNotifications] = useState(false)
   const [birthday, setBirthday] = useState('')
 
-  const { token } = useAuth() // ✅ ВЫНЕС token в scope всего компонента
+  const { token } = useAuth()
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('authToken')
-      window.location.href = '/login' // или другой маршрут, если нужен
+      window.location.href = '/auth'
     }
   }
 
@@ -57,6 +58,7 @@ export function SettingsModal({ onClose }: Props) {
 
       setProfile(data)
       setUsername(data.username || '')
+      setOriginalUsername(data.username || '')
       setNotifications(data.notifications ?? false)
       setBirthday(data.birthday || '1995-08-07')
     }
@@ -64,8 +66,14 @@ export function SettingsModal({ onClose }: Props) {
   }, [token])
 
   const checkUsername = async () => {
+    if (!token) return false
+
+    if (username === originalUsername) {
+      setUsernameError('')
+      return true
+    }
+
     try {
-      if (!token) return false
       const res = await fetch(
         `http://localhost:5000/check-username?username=${username}`,
         {
@@ -100,6 +108,7 @@ export function SettingsModal({ onClose }: Props) {
         token
       )
       setToastVisible(true)
+      setOriginalUsername(username)
       setTimeout(() => setToastVisible(false), 3000)
     } catch (err) {
       console.error('❌ Failed to save:', err)

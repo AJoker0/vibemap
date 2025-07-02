@@ -32,7 +32,7 @@ client.connect().then(() => {
   });
 
   // 👤 Profile (GET)
-  app.get('/profile', requireAuth, async (req, res) => {
+  /*app.get('/profile', requireAuth, async (req, res) => {
     try {
       const userId = req.user.id; // всегда id
       const profile = await db.collection('profiles').findOne({ userId });
@@ -42,7 +42,23 @@ client.connect().then(() => {
       console.error(err);
       res.status(500).json({ error: 'Failed to fetch profile' });
     }
-  });
+  });*/
+  // 👤 Username check (фикс)
+app.get('/check-username', requireAuth, async (req, res) => {
+  const username = req.query.username;
+  const userId = req.user.id;
+
+  if (!username) return res.status(400).json({ error: 'No username provided' });
+
+  const existing = await db.collection('profiles').findOne({ username });
+
+  if (existing && existing.userId !== userId) {
+    return res.json({ taken: true }); // 🔒 чужой username
+  }
+
+  return res.json({ taken: false }); // ✅ свободен или твой
+});
+
 
   // 👤 Profile (PUT)
   app.put('/profile', requireAuth, async (req, res) => {

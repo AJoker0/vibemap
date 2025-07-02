@@ -73,13 +73,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setToken(newToken) // ✅ validate произойдёт в useEffect
   }
 
-  const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken')
-    }
-    setUser(null)
-    setToken(null)
+  // Найдите функцию logout и измените роутинг:
+
+const logout = () => {
+  setToken(null)
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem('authToken')
+    window.location.href = '/auth'  // Должно быть /auth
   }
+}
 
   return (
     <AuthContext.Provider value={{ user, token, login, logout }}>

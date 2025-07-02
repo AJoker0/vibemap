@@ -1,3 +1,5 @@
+//src/components/map/LeafletMap.tsx
+
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -178,6 +180,25 @@ export default function LeafletMap() {
   const [visitedCities, setVisitedCities] = useState<City[]>([])
   const { token } = useAuth()
 
+  const openSettings = () => {
+  setProfileOpen(false)
+  setIsLayerSelectorOpen(false)
+  setSettingsOpen(true)
+}
+
+const openProfile = () => {
+  setSettingsOpen(false)
+  setIsLayerSelectorOpen(false)
+  setProfileOpen(prev => !prev)
+}
+
+const openLayerSelector = () => {
+  setSettingsOpen(false)
+  setProfileOpen(false)
+  setIsLayerSelectorOpen(prev => !prev)
+}
+
+
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
       return
@@ -268,43 +289,44 @@ export default function LeafletMap() {
       {userLocation && <CountryBadge coords={userLocation} />}
       <div className="top-right-ui">
         <button
-          className="profile-button"
-          onClick={() => setProfileOpen((p) => !p)}
-        >
-          👤
-        </button>
-        <button
-          className="settings-button"
-          onClick={() => setSettingsOpen(true)}
-        >
-          ⚙️
-        </button>
-        <div className="layer-switch-wrapper">
-          <button
-            onClick={() => setIsLayerSelectorOpen((prev) => !prev)}
-            className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
-          >
-            🌐
-          </button>
-          {isLayerSelectorOpen && (
-            <div className="map-style-popup">
-              <MapLayerSelector
-                layers={[
-                  { id: 'standard', name: 'Standard', icon: '🗺️' },
-                  { id: 'satellite', name: 'Satellite', icon: '🛰️' },
-                  { id: 'relief', name: 'Relief', icon: '🏔️' },
-                  { id: 'dark', name: 'Dark', icon: '🟣' },
-                  { id: 'light', name: 'Light', icon: '🟡' },
-                ]}
-                current={selectedLayer}
-                onSelect={(id) => {
-                  setSelectedLayer(id)
-                  setIsLayerSelectorOpen(false)
-                }}
-              />
-            </div>
-          )}
-        </div>
+  className="profile-button"
+  onClick={openProfile}
+>
+  👤
+</button>
+<button
+  className="settings-button"
+  onClick={openSettings}
+>
+  ⚙️
+</button>
+<div className="layer-switch-wrapper">
+  <button
+    onClick={openLayerSelector}
+    className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
+  >
+    🌐
+  </button>
+  {isLayerSelectorOpen && (
+    <div className="map-style-popup">
+      <MapLayerSelector
+        layers={[
+          { id: 'standard', name: 'Standard', icon: '🗺️' },
+          { id: 'satellite', name: 'Satellite', icon: '🛰️' },
+          { id: 'relief', name: 'Relief', icon: '🏔️' },
+          { id: 'dark', name: 'Dark', icon: '🟣' },
+          { id: 'light', name: 'Light', icon: '🟡' },
+        ]}
+        current={selectedLayer}
+        onSelect={(id) => {
+          setSelectedLayer(id)
+          setIsLayerSelectorOpen(false)
+        }}
+      />
+    </div>
+  )}
+</div>
+
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {profileOpen && (
