@@ -1,5 +1,3 @@
-//src/components/map/LeafletMap.tsx
-
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
@@ -63,13 +61,47 @@ const defaultPoints: PointData[] = [
   { id: 2, lat: 42.6988, lng: 23.322, title: 'Sofia North' },
 ]
 
-const userIcon = new L.Icon({
-  iconUrl: '/user-map-location.png',
-  iconSize: [32, 32],
-  iconAnchor: [16, 32],
-  popupAnchor: [0, -28],
-  className: 'user-location-marker',
-})
+// 🎨 Динамическая функция для создания иконки пользователя
+const createUserIcon = (isDarkTheme: boolean) => {
+  const shadowStyle = isDarkTheme
+    ? `
+      filter: 
+        drop-shadow(0 0 8px rgba(255, 255, 255, 0.9))
+        drop-shadow(0 0 16px rgba(255, 255, 255, 0.6))
+        drop-shadow(0 0 24px rgba(255, 255, 255, 0.3));
+      border: 3px solid rgba(255, 255, 255, 0.9);
+      box-shadow: 
+        0 0 12px rgba(255, 255, 255, 0.7),
+        0 0 24px rgba(255, 255, 255, 0.4),
+        0 0 36px rgba(255, 255, 255, 0.2);
+    `
+    : `` // ✅ Полностью убрали все эффекты для светлых тем
+
+  return new L.DivIcon({
+    html: `
+      <div style="
+        width: 32px;
+        height: 32px;
+        background: url('/user-map-location.png') center/cover;
+        border-radius: 50%;
+        position: relative;
+        ${shadowStyle}
+        transition: all 0.3s ease;
+        animation: userPulse 2s infinite;
+      "></div>
+      <style>
+        @keyframes userPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+        }
+      </style>
+    `,
+    className: 'user-location-marker',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -28],
+  })
+}
 
 function Clusters({ points }: { points: PointData[] }) {
   const map = useMap()
@@ -180,24 +212,29 @@ export default function LeafletMap() {
   const [visitedCities, setVisitedCities] = useState<City[]>([])
   const { token } = useAuth()
 
+  // 🎨 Определяем темную тему
+  const isDarkTheme = selectedLayer === 'dark' || selectedLayer === 'satellite'
+
+  // 🎯 Создаем иконку с учетом темы
+  const userIcon = createUserIcon(isDarkTheme)
+
   const openSettings = () => {
-  setProfileOpen(false)
-  setIsLayerSelectorOpen(false)
-  setSettingsOpen(true)
-}
+    setProfileOpen(false)
+    setIsLayerSelectorOpen(false)
+    setSettingsOpen(true)
+  }
 
-const openProfile = () => {
-  setSettingsOpen(false)
-  setIsLayerSelectorOpen(false)
-  setProfileOpen(prev => !prev)
-}
+  const openProfile = () => {
+    setSettingsOpen(false)
+    setIsLayerSelectorOpen(false)
+    setProfileOpen(prev => !prev)
+  }
 
-const openLayerSelector = () => {
-  setSettingsOpen(false)
-  setProfileOpen(false)
-  setIsLayerSelectorOpen(prev => !prev)
-}
-
+  const openLayerSelector = () => {
+    setSettingsOpen(false)
+    setProfileOpen(false)
+    setIsLayerSelectorOpen(prev => !prev)
+  }
 
   const requestGeolocation = useCallback(() => {
     if (!navigator.geolocation) {
@@ -289,44 +326,43 @@ const openLayerSelector = () => {
       {userLocation && <CountryBadge coords={userLocation} />}
       <div className="top-right-ui">
         <button
-  className="profile-button"
-  onClick={openProfile}
->
-  👤
-</button>
-<button
-  className="settings-button"
-  onClick={openSettings}
->
-  ⚙️
-</button>
-<div className="layer-switch-wrapper">
-  <button
-    onClick={openLayerSelector}
-    className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
-  >
-    🌐
-  </button>
-  {isLayerSelectorOpen && (
-    <div className="map-style-popup">
-      <MapLayerSelector
-        layers={[
-          { id: 'standard', name: 'Standard', icon: '🗺️' },
-          { id: 'satellite', name: 'Satellite', icon: '🛰️' },
-          { id: 'relief', name: 'Relief', icon: '🏔️' },
-          { id: 'dark', name: 'Dark', icon: '🟣' },
-          { id: 'light', name: 'Light', icon: '🟡' },
-        ]}
-        current={selectedLayer}
-        onSelect={(id) => {
-          setSelectedLayer(id)
-          setIsLayerSelectorOpen(false)
-        }}
-      />
-    </div>
-  )}
-</div>
-
+          className="profile-button"
+          onClick={openProfile}
+        >
+          👤
+        </button>
+        <button
+          className="settings-button"
+          onClick={openSettings}
+        >
+          ⚙️
+        </button>
+        <div className="layer-switch-wrapper">
+          <button
+            onClick={openLayerSelector}
+            className={`map-style-toggle ${isLayerSelectorOpen ? 'no-shadow' : ''}`}
+          >
+            🌐
+          </button>
+          {isLayerSelectorOpen && (
+            <div className="map-style-popup">
+              <MapLayerSelector
+                layers={[
+                  { id: 'standard', name: 'Standard', icon: '🗺️' },
+                  { id: 'satellite', name: 'Satellite', icon: '🛰️' },
+                  { id: 'relief', name: 'Relief', icon: '🏔️' },
+                  { id: 'dark', name: 'Dark', icon: '🟣' },
+                  { id: 'light', name: 'Light', icon: '🟡' },
+                ]}
+                current={selectedLayer}
+                onSelect={(id) => {
+                  setSelectedLayer(id)
+                  setIsLayerSelectorOpen(false)
+                }}
+              />
+            </div>
+          )}
+        </div>
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
       {profileOpen && (
@@ -343,6 +379,9 @@ const openLayerSelector = () => {
         attributionControl={false}
         zoomControl={false}
         style={{ height: '100%', width: '100%' }}
+        minZoom={2}
+        maxBounds={[[-90, -180], [90, 180]]}
+        maxBoundsViscosity={1.0}
         ref={(ref) => {
           if (ref && !mapRef.current) {
             mapRef.current = ref
@@ -369,18 +408,22 @@ const openLayerSelector = () => {
         </Marker>
 
         {selectedEmoji && (
-          <Marker
-            position={userLocation}
-            icon={
-              new L.DivIcon({
-                html: `<div style="font-size: 26px; transform: translateY(-35px);">${selectedEmoji}</div>`,
-                className: 'emoji-overlay',
-                iconSize: [0, 0],
-              })
-            }
-            interactive={false}
-          />
-        )}
+  <Marker
+    position={userLocation}
+    icon={
+      new L.DivIcon({
+        html: `<div style="font-size: 26px; transform: translateY(-35px); ${
+          isDarkTheme 
+            ? 'filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 16px rgba(255, 255, 255, 0.4));' 
+            : '' // ✅ Убрали тень для светлых тем
+        }">${selectedEmoji}</div>`,
+        className: 'emoji-overlay',
+        iconSize: [0, 0],
+      })
+    }
+    interactive={false}
+  />
+)}
 
         <Clusters points={defaultPoints} />
         <MapWatcher

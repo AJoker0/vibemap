@@ -1,5 +1,3 @@
-// src/context/AuthContext.tsx
-
 'use client'
 
 import React, {
@@ -18,6 +16,7 @@ type User = {
 type AuthContextType = {
   user: User | null
   token: string | null
+  isValidating: boolean
   login: (token: string) => void
   logout: () => void
 }
@@ -27,6 +26,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
+  const [isValidating, setIsValidating] = useState(false)
 
   // 🛂 Initialize token from localStorage on client side only
   useEffect(() => {
@@ -46,6 +46,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [token])
 
   const validateToken = async (token: string) => {
+    if (!token) {
+      logout()
+      return
+    }
+
+    setIsValidating(true)
+    
     try {
       const res = await fetch('http://localhost:5000/profile', {
         headers: {
@@ -53,7 +60,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         },
       })
 
-      if (!res.ok) throw new Error('Invalid token')
+      if (!res.ok) {
+        throw new Error('Invalid token')
+      }
 
       const data = await res.json()
       setUser({
@@ -63,6 +72,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err) {
       console.error('❌ Token validation failed:', err)
       logout()
+    } finally {
+      setIsValidating(false)
     }
   }
 
@@ -70,27 +81,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('authToken', newToken)
     }
-    setToken(newToken) // ✅ validate произойдёт в useEffect
+    setToken(newToken)
   }
 
-  // Найдите функцию logout и измените роутинг:
-
-const logout = () => {
-  setToken(null)
-  if (typeof window !== 'undefined') {
-    localStorage.removeItem('authToken')
-    window.location.href = '/auth'  // Должно быть /auth
+  // ✅ Logout без router - просто очищаем состояние
+  const logout = () => {
+    setUser(null)
+    setToken(null)
+    setIsValidating(false)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('authToken')
+    }
   }
-}
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isValidating, login, logout }}>
       {children}
     </AuthContext.Provider>
   )
 }
 
-// 🧪 Safe Hook
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext)
   if (context === undefined) {
