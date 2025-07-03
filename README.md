@@ -137,6 +137,12 @@ pnpm install
 pnpm dev
 ```
 
+### 🔧 4. dev:all
+
+```bash
+pnpm dev:all
+```
+
 Open frontend:
 📡 [http://localhost:3000](http://localhost:3000)
 
