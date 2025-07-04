@@ -12,15 +12,16 @@ export default function RegisterModal({ onClose }: { onClose: () => void }) {
   const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const token = await register(email, password)
-      login(token)
-      onClose()
-    } catch {
-      alert('Register failed')
-    }
+  e.preventDefault()
+  const { token, error } = await register(email, password)
+  if (token) {
+    login(token)
+    onClose()
+  } else {
+    alert(error || 'Register failed')
   }
+}
+
 
   return (
     <div className="modal-backdrop">

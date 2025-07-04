@@ -39,3 +39,21 @@ export async function loginUser(
   const data = await res.json();
   return { token: data.token };
 }
+
+export async function loginWithGoogle(id_token: string): Promise<{ token?: string; error?: string }> {
+  const res = await fetch('http://localhost:5000/auth/google', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ id_token }),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    return { error: errorData.error || '❌ Google login failed' };
+  }
+
+  const data = await res.json();
+  return { token: data.token };
+}

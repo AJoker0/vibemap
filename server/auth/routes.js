@@ -3,6 +3,7 @@
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { signToken, isValidEmail, generateUsername } = require('./utils');
+const bcrypt = require('bcryptjs');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -10,20 +11,18 @@ module.exports = (db) => {
   console.log('🔥 Creating auth router...');
   const router = express.Router();
 
-  // Отладочный middleware
   router.use((req, res, next) => {
     console.log(`📥 Auth request: ${req.method} ${req.path}`);
     console.log('📦 Request body:', req.body);
     next();
   });
 
-  // ✅ Email + password login
+  // 🔐 Login - ОБНОВЛЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ
   router.post('/login', async (req, res) => {
     console.log('🔐 Login with email + password');
     const { email, password } = req.body;
 
     if (!email || !password) {
-      console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email and password required' });
     }
 
@@ -37,10 +36,31 @@ module.exports = (db) => {
       }
 
       console.log('✅ User found, checking password...');
-      if (user.password !== password) {
-        console.log('❌ Invalid password for:', email);
-        return res.status(401).json({ error: 'Invalid password' });
+      console.log('🔍 User data:', { 
+        email: user.email, 
+        hasPassword: !!user.password,
+        hasGoogleId: !!user.googleId,
+        passwordLength: user.password ? user.password.length : 0
+      });
+
+      // Проверяем, есть ли хешированный пароль
+      if (!user.password) {
+        console.log('❌ No password found for user:', email);
+        return res.status(401).json({ error: 'User registered with Google. Please use Google login.' });
       }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+
+if (!isMatch && user.password === password) {
+  console.log('⚠️ Using legacy plain password');
+}
+
+if (!isMatch && user.password !== password) {
+  console.log('❌ Invalid password for:', email);
+  console.log('🔍 Provided password:', password);
+  return res.status(401).json({ error: 'Invalid password' });
+}
+
 
       const token = signToken({
         id: user._id.toString(),
@@ -63,39 +83,35 @@ module.exports = (db) => {
     }
   });
 
-  // ✅ Email + password register
+  // 📝 Register
   router.post('/register', async (req, res) => {
     console.log('📝 Register with email + password');
     const { email, password } = req.body;
 
     if (!email || !password) {
-      console.log('❌ Missing email or password');
       return res.status(400).json({ error: 'Email and password required' });
     }
 
     if (!isValidEmail(email)) {
-      console.log('❌ Invalid email format:', email);
       return res.status(400).json({ error: 'Invalid email format' });
     }
 
     try {
-      console.log('🔍 Checking if user exists:', email);
       const existingUser = await db.collection('users').findOne({ email });
       if (existingUser) {
-        console.log('❌ User already exists:', email);
         return res.status(400).json({ error: 'User already exists' });
       }
 
-      console.log('👤 Creating new user:', email);
+      const hashedPassword = await bcrypt.hash(password, 10);
+
       const result = await db.collection('users').insertOne({
         email,
-        password,
+        password: hashedPassword,
         name: email.split('@')[0],
         avatar: '/user.png',
         createdAt: new Date(),
       });
 
-      console.log('👤 Creating profile for:', email);
       await db.collection('profiles').insertOne({
         userId: result.insertedId.toString(),
         email,
@@ -112,7 +128,6 @@ module.exports = (db) => {
         email: email,
       });
 
-      console.log('✅ Registration successful for:', email);
       res.json({
         token,
         user: {
@@ -128,18 +143,15 @@ module.exports = (db) => {
     }
   });
 
-  // Google OAuth login
+  // 🔗 Google OAuth login
   router.post('/google', async (req, res) => {
-    console.log('🔥 Google login endpoint hit!');
     const { id_token } = req.body;
-    
+
     if (!id_token) {
-      console.log('❌ No ID token provided');
       return res.status(400).json({ error: 'No ID token provided' });
     }
 
     try {
-      console.log('🔍 Verifying Google token...');
       const ticket = await client.verifyIdToken({
         idToken: id_token,
         audience: process.env.GOOGLE_CLIENT_ID,
@@ -147,14 +159,10 @@ module.exports = (db) => {
 
       const payload = ticket.getPayload();
       const { sub, email, name, picture } = payload;
-      
-      console.log('✅ Google token verified for:', email);
 
       let user = await db.collection('users').findOne({ googleId: sub });
 
       if (!user) {
-        console.log('👤 Creating new Google user...');
-        
         const result = await db.collection('users').insertOne({
           googleId: sub,
           email,
@@ -163,12 +171,12 @@ module.exports = (db) => {
           createdAt: new Date(),
         });
 
-        user = { 
-          _id: result.insertedId, 
-          googleId: sub, 
-          email, 
-          name, 
-          avatar: picture 
+        user = {
+          _id: result.insertedId,
+          googleId: sub,
+          email,
+          name,
+          avatar: picture,
         };
 
         await db.collection('profiles').insertOne({
@@ -181,40 +189,31 @@ module.exports = (db) => {
           notifications: false,
           createdAt: new Date(),
         });
-        
-        console.log('✅ New Google user created');
-      } else {
-        console.log('👤 Existing Google user found');
       }
 
-      const token = signToken({ 
-        id: user._id.toString(), 
-        email: user.email 
+      const token = signToken({
+        id: user._id.toString(),
+        email: user.email,
       });
-      
-      console.log('✅ Google login successful for:', email);
-      res.json({ 
-        token, 
+
+      res.json({
+        token,
         user: {
           id: user._id,
           email: user.email,
           name: user.name,
-          avatar: user.avatar
-        }
+          avatar: user.avatar,
+        },
       });
-
     } catch (err) {
       console.error('❌ Google login error:', err);
       res.status(401).json({ error: 'Invalid Google token' });
     }
   });
 
-  // Тестовый роут
   router.get('/test', (req, res) => {
-    console.log('🧪 Auth test endpoint hit');
     res.json({ message: 'Auth routes working!' });
   });
 
-  console.log('✅ Auth router created successfully');
   return router;
 };
