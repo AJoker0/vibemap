@@ -2,9 +2,10 @@
 
 'use client'
 
+import { GoogleLoginButton } from '@/components/GoogleLoginButton'
+import { useAuth } from '@/context/AuthContext'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/context/AuthContext'
 import { register, loginUser } from '@/lib/auth'
 
 export default function AuthPage() {
@@ -13,9 +14,9 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { login } = useAuth()
+  const { login, loginWithGoogle } = useAuth()
   const router = useRouter()
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -385,8 +386,11 @@ export default function AuthPage() {
                 <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   {isLogin ? '🚀 Launch In' : '🌟 Create Magic'}
                 </span>
+                
               )}
+              
             </button>
+            <GoogleLoginButton onLogin={loginWithGoogle} />
           </form>
 
           <div style={{ 

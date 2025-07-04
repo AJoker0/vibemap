@@ -1,20 +1,30 @@
 // server/auth/middleware.js
-const { verifyToken } = require('./jwt');
+const { verifyToken, extractToken } = require('./utils');
+const { MongoClient } = require('mongodb');
 
-module.exports = function requireAuth(req, res, next) {
-  const auth = req.headers.authorization;
-  if (!auth || !auth.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Missing or malformed token' });
-  }
-
-  const token = auth.split(' ')[1];
-
+const requireAuth = async (req, res, next) => {
   try {
+    const authHeader = req.headers.authorization;
+    const token = extractToken(authHeader);
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    // Проверяем токен
     const decoded = verifyToken(token);
-    console.log('🔑 Decoded token:', decoded); // 👈 вот здесь
-    req.user = decoded;
+    
+    // Добавляем пользователя в req для использования в других роутах
+    req.user = {
+      id: decoded.id,
+      email: decoded.email
+    };
+    
     next();
   } catch (err) {
+    console.error('Auth middleware error:', err);
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+module.exports = requireAuth;

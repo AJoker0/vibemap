@@ -11,6 +11,8 @@ import React, {
 type User = {
   id: string
   email: string
+  name?: string
+  avatar?: string
 }
 
 type AuthContextType = {
@@ -18,6 +20,7 @@ type AuthContextType = {
   token: string | null
   isValidating: boolean
   login: (token: string) => void
+  loginWithGoogle: (id_token: string) => Promise<void>
   logout: () => void
 }
 
@@ -28,46 +31,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [token, setToken] = useState<string | null>(null)
   const [isValidating, setIsValidating] = useState(false)
 
-  // 🛂 Initialize token from localStorage on client side only
+  // ✅ Восстанавливаем токен из localStorage
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedToken = localStorage.getItem('authToken')
-      if (savedToken) {
-        setToken(savedToken)
-      }
-    }
+    const saved = localStorage.getItem('authToken')
+    if (saved) setToken(saved)
   }, [])
 
-  // 🛂 Token changes → validate it
+  // ✅ Проверяем токен при изменении
   useEffect(() => {
-    if (token) {
-      validateToken(token)
-    }
+    if (token) validateToken(token)
   }, [token])
 
-  const validateToken = async (token: string) => {
-    if (!token) {
-      logout()
-      return
-    }
-
+  // 🔍 Проверка JWT через API
+  const validateToken = async (jwt: string) => {
     setIsValidating(true)
-    
     try {
       const res = await fetch('http://localhost:5000/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { Authorization: `Bearer ${jwt}` },
       })
-
-      if (!res.ok) {
-        throw new Error('Invalid token')
-      }
-
+      if (!res.ok) throw new Error('Invalid token')
       const data = await res.json()
       setUser({
         id: data.userId || data.id || 'unknown',
-        email: data.email || 'anonymous',
+        email: data.email || 'unknown',
+        name: data.name,
+        avatar: data.avatar,
       })
     } catch (err) {
       console.error('❌ Token validation failed:', err)
@@ -77,34 +65,58 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  const login = (newToken: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('authToken', newToken)
-    }
-    setToken(newToken)
+  // 💾 Login (email + password, или Google) — просто сет токена
+  const login = (jwt: string) => {
+    localStorage.setItem('authToken', jwt)
+    setToken(jwt)
   }
 
-  // ✅ Logout без router - просто очищаем состояние
+  // 🔐 Google login handler
+  const loginWithGoogle = async (id_token: string) => {
+  const res = await fetch('http://localhost:5000/auth/google', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token }),
+  })
+
+  const contentType = res.headers.get('content-type')
+  if (!contentType || !contentType.includes('application/json')) {
+    const text = await res.text()
+    throw new Error('Сервер вернул не JSON: ' + text)
+  }
+
+  const data = await res.json()
+
+  if (data.token) {
+    localStorage.setItem('authToken', data.token)
+    setToken(data.token)
+    setUser(data.user)
+  } else {
+    throw new Error('Нет токена в ответе от сервера')
+  }
+}
+
+
+
+  // 🚪 Logout
   const logout = () => {
-    setUser(null)
+    localStorage.removeItem('authToken')
     setToken(null)
+    setUser(null)
     setIsValidating(false)
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken')
-    }
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, isValidating, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, token, isValidating, login, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )
 }
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+  const ctx = useContext(AuthContext)
+  if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>')
+  return ctx
 }

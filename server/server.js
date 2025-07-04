@@ -1,41 +1,54 @@
+//server/server.js
+
 const express = require('express');
 const cors = require('cors');
 const { MongoClient } = require('mongodb');
 const requireAuth = require('./auth/middleware');
 
+// Загружаем переменные окружения
+require('dotenv').config();
+
 const app = express();
-const port = 5000;
+const port = process.env.PORT || 5000;
 
-// ✅ Apply CORS before everything else
-app.use(cors({
-  origin: 'http://localhost:3000',
-  credentials: true,
-}));
-
-// ✅ Parse JSON body (required for req.body!)
+// ✅ CORS + JSON
+app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
 app.use(express.json({ limit: '8mb' }));
 
-const client = new MongoClient('mongodb://localhost:27017/vibemap');
+// Отладочный middleware
+app.use((req, res, next) => {
+  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
+
+// ✅ MongoDB connection
+const client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/vibemap');
 let db;
 
 client.connect().then(() => {
   db = client.db('vibemap');
   console.log('🧠 Connected to MongoDB');
 
-  // 🔐 Auth routes
+  // ✅ Auth routes
+  console.log('🔥 Registering auth routes...');
   const authRoutes = require('./auth/routes')(db);
   app.use('/auth', authRoutes);
+  console.log('✅ Auth routes registered at /auth');
+
+  // ✅ Тестовый роут
+  app.get('/test', (req, res) => {
+    res.json({ message: 'Server is working!', timestamp: new Date().toISOString() });
+  });
 
   // ✅ Protected test route
   app.get('/private', requireAuth, (req, res) => {
     res.json({ message: 'Protected data', user: req.user });
   });
 
-  // 👤 Profile (GET)
+  // ✅ Get profile
   app.get('/profile', requireAuth, async (req, res) => {
     try {
-      const userId = req.user.id; // всегда id
-      const profile = await db.collection('profiles').findOne({ userId });
+      const profile = await db.collection('profiles').findOne({ userId: req.user.id });
       if (!profile) return res.status(404).json({ error: 'Profile not found' });
       res.json(profile);
     } catch (err) {
@@ -43,24 +56,8 @@ client.connect().then(() => {
       res.status(500).json({ error: 'Failed to fetch profile' });
     }
   });
-  // 👤 Username check (фикс)
-app.get('/check-username', requireAuth, async (req, res) => {
-  const username = req.query.username;
-  const userId = req.user.id;
 
-  if (!username) return res.status(400).json({ error: 'No username provided' });
-
-  const existing = await db.collection('profiles').findOne({ username });
-
-  if (existing && existing.userId !== userId) {
-    return res.json({ taken: true }); // 🔒 чужой username
-  }
-
-  return res.json({ taken: false }); // ✅ свободен или твой
-});
-
-
-  // 👤 Profile (PUT)
+  // ✅ Update profile
   app.put('/profile', requireAuth, async (req, res) => {
     try {
       const userId = req.user.id;
@@ -85,16 +82,23 @@ app.get('/check-username', requireAuth, async (req, res) => {
     }
   });
 
-  // 👤 Username check
+  // ✅ Check username
   app.get('/check-username', requireAuth, async (req, res) => {
     const username = req.query.username;
+    const userId = req.user.id;
+
     if (!username) return res.status(400).json({ error: 'No username provided' });
 
     const existing = await db.collection('profiles').findOne({ username });
-    res.json({ taken: !!existing });
+
+    if (existing && existing.userId !== userId) {
+      return res.json({ taken: true });
+    }
+
+    return res.json({ taken: false });
   });
 
-  // 📍 Visits
+  // ✅ Get visits
   app.get('/visits', requireAuth, async (req, res) => {
     try {
       const visits = await db.collection('visits').find({ userId: req.user.id }).toArray();
@@ -105,6 +109,7 @@ app.get('/check-username', requireAuth, async (req, res) => {
     }
   });
 
+  // ✅ Add visit
   app.post('/visits', requireAuth, async (req, res) => {
     try {
       const visit = { ...req.body, userId: req.user.id };
@@ -116,7 +121,7 @@ app.get('/check-username', requireAuth, async (req, res) => {
     }
   });
 
-  // 🧑‍🤝‍🧑 Friends
+  // ✅ Get friends
   app.get('/friends', requireAuth, async (req, res) => {
     try {
       const friends = await db.collection('friends').find({ userId: req.user.id }).toArray();
@@ -127,8 +132,17 @@ app.get('/check-username', requireAuth, async (req, res) => {
     }
   });
 
-}).catch(console.error);
+  // ✅ Всё загружено
+  console.log('✅ All routes registered');
 
-app.listen(port, () => {
-  console.log(`🚀 API server running on http://localhost:${port}`);
+  // ✅ Старт сервера
+  app.listen(port, () => {
+    console.log(`🚀 API server running on http://localhost:${port}`);
+    console.log(`🔗 Test endpoint: http://localhost:${port}/test`);
+    console.log(`🔗 Auth test: http://localhost:${port}/auth/test`);
+  });
+
+}).catch(err => {
+  console.error('❌ MongoDB connection failed:', err);
+  process.exit(1);
 });

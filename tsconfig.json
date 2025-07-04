@@ -31,11 +31,13 @@
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts"
-  ],
+  "next-env.d.ts",
+  "**/*.ts",
+  "**/*.tsx",
+  ".next/types/**/*.ts",
+  "src/types/global.d.ts"  // ✅ добавь эту строку (или путь к твоему .d.ts файлу)
+]
+,
   "exclude": [
     "node_modules"
   ]
