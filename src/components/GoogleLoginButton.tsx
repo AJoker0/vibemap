@@ -1,3 +1,5 @@
+//src/components/GoogleLoginButton.tsx
+
 'use client'
 
 import { useEffect } from 'react'
@@ -20,9 +22,16 @@ export function GoogleLoginButton({ onLogin }: GoogleLoginButtonProps) {
         window.google.accounts.id.initialize({
           client_id: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
           callback: (response: any) => {
-            console.log('Google login success:', response)
-            console.log('🔥 Sending token to parent component...')
-            onLogin(response.credential)
+            console.log('🔥 Google callback triggered!')
+            console.log('📦 Google response:', response)
+            
+            if (response.credential) {
+              console.log('✅ Credential found, calling onLogin...')
+              console.log('📤 Calling parent function...')
+              onLogin(response.credential)
+            } else {
+              console.error('❌ No credential in response!')
+            }
           },
         })
 
@@ -42,7 +51,6 @@ export function GoogleLoginButton({ onLogin }: GoogleLoginButtonProps) {
     }
 
     return () => {
-      // Проверяем что script существует перед удалением
       if (document.head.contains(script)) {
         document.head.removeChild(script)
       }

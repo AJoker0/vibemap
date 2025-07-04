@@ -30,42 +30,45 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
 
   // ✅ Исправленная функция с правильными логами
   const handleGoogleLogin = async (id_token: string) => {
-    console.log('🔥 Sending Google token to server...')
-    console.log('🎯 Token received:', id_token.substring(0, 50) + '...')
+  console.log('🎯 handleGoogleLogin called!')
+  console.log('🔥 Sending Google token to server...')
+  console.log('🎯 Token received:', id_token.substring(0, 50) + '...')
+  
+  try {
+    const res = await fetch('http://localhost:5000/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id_token }),
+    })
+
+    console.log('📥 Server response status:', res.status)
     
-    try {
-      const res = await fetch('http://localhost:5000/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id_token }),
-      })
-
-      console.log('📥 Server response status:', res.status)
-      
-      if (!res.ok) {
-        console.error('❌ Server response not OK:', res.status, res.statusText)
-        const errorText = await res.text()
-        console.error('❌ Error response:', errorText)
-        alert(`Google login failed: ${res.status} ${res.statusText}`)
-        return
-      }
-
-      const data = await res.json()
-      console.log('📦 Server response data:', data)
-      
-      if (data.token) {
-        console.log('✅ Login successful, saving token...')
-        login(data.token)
-        onClose()
-      } else {
-        console.error('❌ Login failed:', data.error)
-        alert(data.error || 'Google login failed')
-      }
-    } catch (err) {
-      console.error('❌ Network error:', err)
-      alert('Google login network error')
+    if (!res.ok) {
+      console.error('❌ Server response not OK:', res.status, res.statusText)
+      const errorText = await res.text()
+      console.error('❌ Error response:', errorText)
+      alert(`Google login failed: ${res.status} ${res.statusText}`)
+      return
     }
+
+    const data = await res.json()
+    console.log('📦 Server response data:', data)
+    
+    if (data.token) {
+      console.log('✅ Login successful, saving token...')
+      console.log('🔄 Calling login function...')
+      login(data.token)
+      console.log('🚪 Closing modal...')
+      onClose()
+    } else {
+      console.error('❌ Login failed:', data.error)
+      alert(data.error || 'Google login failed')
+    }
+  } catch (err) {
+    console.error('❌ Network error:', err)
+    alert('Google login network error')
   }
+}
 
   return (
     <div className="modal-backdrop">
