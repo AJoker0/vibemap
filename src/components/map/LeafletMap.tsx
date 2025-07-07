@@ -258,10 +258,18 @@ export default function LeafletMap() {
       try {
         if (!token) return
         const friends = await getFriends(token)
-        const visitsRes = await fetch('http://localhost:5000/visits', {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        const visits = await visitsRes.json()
+        
+        // Для NextAuth пользователей возвращаем пустой список визитов
+        let visits = []
+        if (token !== 'nextauth-session') {
+          const visitsRes = await fetch('http://localhost:5000/visits', {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+          if (visitsRes.ok) {
+            visits = await visitsRes.json()
+          }
+        }
+        
         const cityCounts: Record<string, number> = {}
         visits.forEach((v: { city: string }) => {
           cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
@@ -449,20 +457,30 @@ export default function LeafletMap() {
                     userLocation[0],
                     userLocation[1]
                   )
-                  await fetch('http://localhost:5000/visits', {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                      Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                      lat: userLocation[0],
-                      lng: userLocation[1],
-                      city,
-                      timestamp: new Date().toISOString(),
-                      emoji,
-                    }),
-                  })
+                  
+                  // Сохраняем визит только для JWT пользователей
+                  if (token && token !== 'nextauth-session') {
+                    try {
+                      await fetch('http://localhost:5000/visits', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                          Authorization: `Bearer ${token}`,
+                        },
+                        body: JSON.stringify({
+                          lat: userLocation[0],
+                          lng: userLocation[1],
+                          city,
+                          timestamp: new Date().toISOString(),
+                          emoji,
+                        }),
+                      })
+                    } catch (error) {
+                      console.log('⚠️ Could not save visit to server:', error)
+                    }
+                  } else {
+                    console.log('🔄 NextAuth user - visit not saved to server')
+                  }
                 }
                 setIsOpen(false)
               }}

@@ -211,6 +211,71 @@ if (!isMatch && user.password !== password) {
     }
   });
 
+  // ✅ NextAuth Google OAuth endpoint
+  router.post('/google-oauth', async (req, res) => {
+    console.log('🔥 NextAuth Google OAuth endpoint hit!')
+    const { googleId, email, name, avatar } = req.body
+
+    if (!googleId || !email) {
+      return res.status(400).json({ error: 'Missing required fields' })
+    }
+
+    try {
+      console.log('🔍 Looking for user with googleId:', googleId)
+      let user = await db.collection('users').findOne({ googleId })
+
+      if (!user) {
+        console.log('👤 Creating new OAuth user...')
+        
+        const result = await db.collection('users').insertOne({
+          googleId,
+          email,
+          name,
+          avatar,
+          createdAt: new Date(),
+        })
+
+        user = {
+          _id: result.insertedId,
+          googleId,
+          email,
+          name,
+          avatar,
+        }
+
+        // Создаем профиль
+        await db.collection('profiles').insertOne({
+          userId: result.insertedId.toString(),
+          email,
+          name,
+          avatar: avatar || '/user.png',
+          birthday: '',
+          username: generateUsername(name, email),
+          notifications: false,
+          createdAt: new Date(),
+        })
+        
+        console.log('✅ New OAuth user created')
+      } else {
+        console.log('👤 Existing OAuth user found')
+      }
+
+      res.json({ 
+        success: true, 
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.name,
+          avatar: user.avatar
+        }
+      })
+
+    } catch (err) {
+      console.error('❌ OAuth user save error:', err)
+      res.status(500).json({ error: 'Failed to save user' })
+    }
+  })
+
   router.get('/test', (req, res) => {
     res.json({ message: 'Auth routes working!' });
   });

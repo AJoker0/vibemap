@@ -9,6 +9,7 @@ import React, {
   useState,
   ReactNode,
 } from 'react'
+import { useSession } from 'next-auth/react'
 
 type User = {
   id: string
@@ -32,16 +33,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isValidating, setIsValidating] = useState(false)
+  const { data: session, status } = useSession()
 
-  // ✅ Восстанавливаем токен из localStorage
+  // ✅ Проверяем NextAuth session
   useEffect(() => {
-    const saved = localStorage.getItem('authToken')
-    if (saved) setToken(saved)
-  }, [])
+    if (status === 'loading') {
+      setIsValidating(true)
+      return
+    }
 
-  // ✅ Проверяем токен при изменении
+    if (session?.user) {
+      // Пользователь авторизован через NextAuth
+      console.log('✅ NextAuth session found:', session.user)
+      setUser({
+        id: session.user.id || 'nextauth-user',
+        email: session.user.email || '',
+        name: session.user.name || '',
+        avatar: session.user.image || '/user.png',
+      })
+      setToken('nextauth-session') // Используем специальный токен для NextAuth
+      setIsValidating(false)
+    } else {
+      // Проверяем обычный JWT токен
+      const saved = localStorage.getItem('authToken')
+      if (saved) {
+        console.log('🔑 Found JWT token in localStorage')
+        setToken(saved)
+      } else {
+        console.log('👤 No auth found - user is anonymous')
+        setIsValidating(false)
+      }
+    }
+  }, [session, status])
+
+  // ✅ Проверяем обычный JWT токен при изменении (если не NextAuth)
   useEffect(() => {
-    if (token) validateToken(token)
+    if (token && token !== 'nextauth-session') {
+      validateToken(token)
+    }
   }, [token])
 
   // 🔍 Проверка JWT через API
@@ -97,8 +126,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     throw new Error('Нет токена в ответе от сервера')
   }
 }
-
-
 
   // 🚪 Logout
   const logout = () => {

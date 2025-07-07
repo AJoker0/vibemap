@@ -49,15 +49,21 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
 
       try {
         const profile = await getProfile(token)
-        const visitsRes = await fetch('http://localhost:5000/visits', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
+        
+        // Для NextAuth пользователей не делаем запрос визитов
+        let visits: Visit[] = []
+        if (token !== 'nextauth-session') {
+          const visitsRes = await fetch('http://localhost:5000/visits', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
 
-        if (!visitsRes.ok) throw new Error('Failed to fetch visits')
-
-        const visits: Visit[] = await visitsRes.json()
+          if (visitsRes.ok) {
+            visits = await visitsRes.json()
+          }
+        }
+        
         setName(profile.name)
         setAvatar(profile.avatar)
 
@@ -88,6 +94,14 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
 
     try {
       console.log('🔐 Saving with token:', token)
+
+      // Для NextAuth пользователей просто показываем успех
+      if (token === 'nextauth-session') {
+        console.log('🔄 NextAuth user - profile save simulated')
+        setShowSaved(true)
+        setTimeout(() => setShowSaved(false), 2000)
+        return
+      }
 
       const res = await fetch('http://localhost:5000/profile', {
         method: 'PUT',

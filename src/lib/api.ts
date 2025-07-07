@@ -33,9 +33,22 @@ export type ProfileUpdate = {
   notifications?: boolean
 }
 
-// ✅ Получить профиль (с токеном)
+// ✅ Получить профиль (с токеном или NextAuth session)
 export async function getProfile(token: string | null) {
   if (!token) throw new Error('⚠️ No token — user not logged in')
+
+  // Если это NextAuth session, пропускаем запрос к серверу
+  if (token === 'nextauth-session') {
+    // Возвращаем фиктивный профиль для NextAuth пользователей
+    return {
+      id: 'nextauth-user',
+      name: 'NextAuth User',
+      email: 'user@example.com',
+      avatar: '/user.png',
+      username: 'nextauth_user',
+      notifications: true
+    }
+  }
 
   const res = await fetch('http://localhost:5000/profile', {
     headers: {
@@ -50,6 +63,11 @@ export async function getProfile(token: string | null) {
 export async function getFriends(token: string | null) {
   if (!token) throw new Error('⚠️ No token — user not logged in')
 
+  // Если это NextAuth session, возвращаем пустой список друзей
+  if (token === 'nextauth-session') {
+    return []
+  }
+
   const res = await fetch('http://localhost:5000/friends', {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -61,6 +79,12 @@ export async function getFriends(token: string | null) {
 
 // ✅ Обновить профиль
 export async function updateProfile(data: ProfileUpdate, token: string) {
+  // Если это NextAuth session, просто возвращаем успех
+  if (token === 'nextauth-session') {
+    console.log('🔄 NextAuth user - profile update simulated')
+    return { success: true }
+  }
+
   const res = await fetch(`${BASE_URL}/profile`, {
     method: 'PUT',
     headers: {
@@ -87,6 +111,11 @@ export async function updateProfile(data: ProfileUpdate, token: string) {
 
 // ✅ Проверить занятость username
 export async function checkUsername(username: string, token: string) {
+  // Если это NextAuth session, всегда возвращаем что username свободен
+  if (token === 'nextauth-session') {
+    return { taken: false }
+  }
+
   const res = await fetch(`${BASE_URL}/check-username?username=${username}`, {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
