@@ -71,7 +71,7 @@ vibemap/
     ├── middleware/          # JWT check
     └── index.js             # Entry point
 ```
-// f*ck Antonio
+
 ---
 
 ## 🧱 DATABASE STRUCTURE (MongoDB)
@@ -82,7 +82,7 @@ Collections:
 * `profiles`: `{ avatar, birthday, username, notifications }`
 * `visits`: `{ lat, lng, city, timestamp, emoji, userId }`
 * `friends`: `[{ fromUserId, toUserId, mutual }]`
-
+// f*ck Antonio
 ---
 
 ## 🔒 AUTH FLOW
