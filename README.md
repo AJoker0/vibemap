@@ -3,6 +3,7 @@
 
 > Social vibes meet interactive maps. Drop your emotion, discover your friends, visualize your world.
 
+Made by student, for students
 ---
 
 ## 🔥 TL;DR
