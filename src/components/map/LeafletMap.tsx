@@ -259,9 +259,16 @@ export default function LeafletMap() {
         if (!token) return
         const friends = await getFriends(token)
         
-        // Для NextAuth пользователей возвращаем пустой список визитов
+        // Загружаем визиты для всех авторизованных пользователей
         let visits = []
-        if (token !== 'nextauth-session') {
+        if (token === 'nextauth-session') {
+          // Для NextAuth пользователей используем Next.js API роут
+          const visitsRes = await fetch('/api/visits')
+          if (visitsRes.ok) {
+            visits = await visitsRes.json()
+          }
+        } else {
+          // Для JWT пользователей используем Express сервер
           const visitsRes = await fetch('http://localhost:5000/visits', {
             headers: { Authorization: `Bearer ${token}` },
           })
@@ -458,28 +465,48 @@ export default function LeafletMap() {
                     userLocation[1]
                   )
                   
-                  // Сохраняем визит только для JWT пользователей
-                  if (token && token !== 'nextauth-session') {
+                  // Сохраняем визит для всех авторизованных пользователей
+                  if (token) {
                     try {
-                      await fetch('http://localhost:5000/visits', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({
-                          lat: userLocation[0],
-                          lng: userLocation[1],
-                          city,
-                          timestamp: new Date().toISOString(),
-                          emoji,
-                        }),
-                      })
+                      if (token === 'nextauth-session') {
+                        // Для NextAuth пользователей используем Next.js API роут
+                        await fetch('/api/visits', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            lat: userLocation[0],
+                            lng: userLocation[1],
+                            city,
+                            timestamp: new Date().toISOString(),
+                            emoji,
+                          }),
+                        })
+                        console.log('✅ NextAuth user visit saved successfully')
+                      } else {
+                        // Для JWT пользователей используем Express сервер
+                        await fetch('http://localhost:5000/visits', {
+                          method: 'POST',
+                          headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`,
+                          },
+                          body: JSON.stringify({
+                            lat: userLocation[0],
+                            lng: userLocation[1],
+                            city,
+                            timestamp: new Date().toISOString(),
+                            emoji,
+                          }),
+                        })
+                        console.log('✅ JWT user visit saved successfully')
+                      }
                     } catch (error) {
                       console.log('⚠️ Could not save visit to server:', error)
                     }
                   } else {
-                    console.log('🔄 NextAuth user - visit not saved to server')
+                    console.log('⚠️ No authentication token - visit not saved')
                   }
                 }
                 setIsOpen(false)

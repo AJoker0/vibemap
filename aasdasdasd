@@ -1,0 +1,39 @@
+[33m3bc0158[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m YUP
+[33m1f64486[m google works'
+[33m082a05e[m google
+[33m89eb8c7[m bla
+[33m3f850f5[m fix: профиль и токен
+[33mda0ede0[m Update README.md
+[33m361adfe[m 🔐 Initial commit: Auth system, settings modal, MongoDB API, full-stack MVP
+[33m00dafc3[m Fix TypeScript errors and SSR issues - working version
+[33m2d6536f[m djaga-djaga
+[33ma259c82[m chika-chika-chika
+[33m9bfa74f[m chao belo
+[33mebd9eb6[m fix: lint/type errors, image optimization, remove unused vars
+[33m5695da7[m fix: lint/type errors, image optimization, remove unused vars
+[33m707958c[m okak
+[33m969a28e[m fix: install all storybook deps for eslint linting
+[33ma074cdf[m fix: install all storybook deps for eslint linting
+[33mb94f434[m fix: install all storybook deps for eslint linting
+[33m283f203[m fix: install all storybook deps for eslint linting
+[33m3dc75b0[m chore: install all eslint and prettier plugins for CI
+[33m62194a9[m back
+[33m827618d[m chore: remove storybook lint rules from eslint config
+[33mda169c8[m fix: add eslint-plugin-storybook for CI linting
+[33m0ea5256[m fix: add eslint-plugin-prettier for CI
+[33m9562256[m fix: add eslint-plugin-prettier and prettier for CI linting
+[33mfffa1cd[m  fix: add missing eslint-plugin-prettier to resolve CI failure
+[33m55d73d4[m fix: update CI config for pnpm and Node.js
+[33m6fd303f[m fix: update CI config for pnpm and Node.js
+[33m80f145e[m feat: upload full project (ignore db and log files)
+[33m411f9f3[m fix: remove quotes from .nvmrc for correct Node version in CI
+[33mc70f9dd[m Update README.md
+[33mc972b3c[m Add files via upload
+[33m00eb139[m Update README.md
+[33mbe9478d[m night shift
+[33m78162f9[m okaaay lesgoo
+[33m5cdf8e3[m Hallelujah
+[33m9874a96[m initial commit
+[33m8dd75d2[m feat: initial UI system with components preview
+[33m180b931[m Initial commit
+[33m6bb8a11[m chore: initialize git repo with readme and .gitignore

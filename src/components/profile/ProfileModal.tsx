@@ -50,9 +50,16 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
       try {
         const profile = await getProfile(token)
         
-        // Для NextAuth пользователей не делаем запрос визитов
+        // Загружаем визиты для всех авторизованных пользователей
         let visits: Visit[] = []
-        if (token !== 'nextauth-session') {
+        if (token === 'nextauth-session') {
+          // Для NextAuth пользователей используем Next.js API роут
+          const visitsRes = await fetch('/api/visits')
+          if (visitsRes.ok) {
+            visits = await visitsRes.json()
+          }
+        } else {
+          // Для JWT пользователей используем Express сервер
           const visitsRes = await fetch('http://localhost:5000/visits', {
             headers: {
               Authorization: `Bearer ${token}`,
