@@ -33,6 +33,7 @@ export function SettingsModal({ onClose }: Props) {
   const [usernameError, setUsernameError] = useState('')
   const [notifications, setNotifications] = useState(false)
   const [birthday, setBirthday] = useState('')
+  const [showUsernameHint, setShowUsernameHint] = useState(false)
 
   const { token } = useAuth()
 
@@ -61,6 +62,11 @@ export function SettingsModal({ onClose }: Props) {
       setOriginalUsername(data.username || '')
       setNotifications(data.notifications ?? false)
       setBirthday(data.birthday || '1995-08-07')
+      
+      // 🔔 Показываем подсказку для дефолтного username
+      if (data.isDefaultUsername || data.username?.includes('_')) {
+        setShowUsernameHint(true)
+      }
     }
     fetchData()
   }, [token])
@@ -68,50 +74,104 @@ export function SettingsModal({ onClose }: Props) {
   const checkUsername = async () => {
     if (!token) return false
 
+    // 🔍 Проверка на пустое поле
+    if (!username || username.trim() === '') {
+      setUsernameError('⚠️ Username не может быть пустым')
+      return false
+    }
+
+    // 🔍 Проверка на минимальную длину
+    if (username.trim().length < 3) {
+      setUsernameError('⚠️ Username должен содержать минимум 3 символа')
+      return false
+    }
+
+    // 🔍 Проверка на недопустимые символы
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      setUsernameError('⚠️ Разрешены только буквы, цифры и _')
+      return false
+    }
+
     if (username === originalUsername) {
       setUsernameError('')
       return true
     }
 
+    // 🔍 Проверяем доступность для ВСЕХ пользователей через универсальный API
     try {
-      const res = await fetch(
-        `http://localhost:5000/check-username?username=${username}`,
-        {
+      let res
+      if (token === 'nextauth-session') {
+        // Для NextAuth пользователей используем Next.js API роут
+        res = await fetch('/api/check-username', {
+          method: 'POST',
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
-        }
-      )
-      if (!res.ok) throw new Error(`Server responded with ${res.status}`)
+          body: JSON.stringify({ username }),
+        })
+      } else {
+        // Для JWT пользователей используем Express сервер
+        res = await fetch(
+          `http://localhost:5000/check-username?username=${username}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        )
+      }
+      
+      if (!res.ok) {
+        // Вместо throw делаем предупреждение
+        console.warn('⚠️ Не удалось проверить доступность username:', res.status)
+        setUsernameError('⚠️ Не удалось проверить доступность. Попробуйте позже')
+        return false
+      }
       const data = await res.json()
       if (data.taken) {
-        setUsernameError('❌ Taken')
+        setUsernameError('❌ Username уже занят')
         return false
       }
       setUsernameError('')
       return true
     } catch (err) {
-      console.error('⚠️ Username check failed:', err)
-      setUsernameError('⚠️ Error checking username')
+      console.warn('⚠️ Username check failed:', err)
+      setUsernameError('⚠️ Не удалось проверить username. Можете сохранить как есть')
       return false
     }
   }
 
   const handleSave = async () => {
-    if (!token || usernameError) return
+    if (!token) return
+    
+    // 🔍 Проверяем валидность username перед сохранением
+    if (!username || username.trim() === '') {
+      setUsernameError('⚠️ Username не может быть пустым')
+      return
+    }
+    
+    if (usernameError) return
+    
     const isValid = await checkUsername()
     if (!isValid) return
 
     try {
       await updateProfile(
-        { ...profile, birthday, username, notifications },
+        { ...profile, birthday, username: username.trim(), notifications },
         token
       )
       setToastVisible(true)
-      setOriginalUsername(username)
+      setOriginalUsername(username.trim())
       setTimeout(() => setToastVisible(false), 3000)
-    } catch (err) {
+    } catch (err: any) {
       console.error('❌ Failed to save:', err)
+      
+      // 🎯 Обрабатываем ошибку занятого username
+      if (err.message.includes('уже занят') || err.message.includes('занят')) {
+        setUsernameError('❌ Username уже занят. Выберите другой')
+      } else {
+        setUsernameError('❌ Не удалось сохранить. Попробуйте позже')
+      }
     }
   }
 
@@ -142,14 +202,40 @@ export function SettingsModal({ onClose }: Props) {
               type="text"
               className={`input-text ${usernameError ? 'error' : ''}`}
               value={username}
+              placeholder="your_unique_username"
               onChange={(e) => {
-                setUsername(e.target.value)
-                setUsernameError('')
+                const value = e.target.value
+                setUsername(value)
+                setShowUsernameHint(false) // Скрываем подсказку при редактировании
+                
+                // 🔍 Валидация в реальном времени
+                if (value.trim() === '') {
+                  setUsernameError('')
+                } else if (value.length < 3) {
+                  setUsernameError('⚠️ Минимум 3 символа')
+                } else if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+                  setUsernameError('⚠️ Только буквы, цифры и _')
+                } else {
+                  setUsernameError('')
+                }
               }}
               onBlur={checkUsername}
             />
             {usernameError && (
-              <span className="error-text">{usernameError}</span>
+              <span 
+                className={`error-text ${usernameError.includes('⚠️') ? 'warning' : 'error'}`}
+                style={{
+                  color: usernameError.includes('⚠️') ? '#f59e0b' : '#ef4444'
+                }}
+              >
+                {usernameError}
+              </span>
+            )}
+            {showUsernameHint && (
+              <div className="username-hint">
+                💡 <strong>Совет:</strong> Измените username на уникальный! 
+                Друзья смогут найти вас по нему 🔍
+              </div>
             )}
           </div>
 

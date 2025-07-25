@@ -160,14 +160,60 @@
   border-radius: 8px;
   font-size: 0.85rem;
   width: 100%;
+  transition: border-color 0.2s ease;
+}
+
+.input-text:focus {
+  outline: none;
+  border-color: #60a5fa;
 }
 
 .input-text.error {
   border-color: #ef4444;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
 }
 
 .error-text {
   font-size: 0.75rem;
-  color: #ef4444;
   margin-top: 4px;
+  display: block;
+  font-weight: 500;
+}
+
+/* Цвета для разных типов сообщений */
+.error-text {
+  color: #ef4444; /* По умолчанию красный для ошибок */
+}
+
+.error-text:has-text('⚠️'),
+.error-text[data-type="warning"] {
+  color: #f59e0b; /* Оранжевый для предупреждений */
+}
+
+.username-hint {
+  background: linear-gradient(135deg, #fef3c7, #fbbf24);
+  color: #92400e;
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  border: 1px solid #f59e0b;
+  animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

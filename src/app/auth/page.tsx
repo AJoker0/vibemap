@@ -33,7 +33,7 @@ export default function AuthPage() {
       }
 
       if (result.token) {
-        login(result.token)
+        await login(result.token)
         router.push('/')
       } else {
         setError('Something went wrong 😢')
@@ -390,7 +390,7 @@ export default function AuthPage() {
               )}
               
             </button>
-            <GoogleLoginButton onLogin={loginWithGoogle} />
+            <GoogleLoginButton />
           </form>
 
           <div style={{ 

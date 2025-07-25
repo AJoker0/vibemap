@@ -9,7 +9,7 @@ import React, {
   useState,
   ReactNode,
 } from 'react'
-import { useSession } from 'next-auth/react'
+import { useSession, signOut } from 'next-auth/react'
 
 type User = {
   id: string
@@ -22,9 +22,9 @@ type AuthContextType = {
   user: User | null
   token: string | null
   isValidating: boolean
-  login: (token: string) => void
+  login: (token: string) => Promise<void>
   loginWithGoogle: (id_token: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -35,34 +35,75 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isValidating, setIsValidating] = useState(false)
   const { data: session, status } = useSession()
 
-  // ✅ Проверяем NextAuth session
+  // ✅ Проверяем аутентификацию с правильным приоритетом
   useEffect(() => {
     if (status === 'loading') {
       setIsValidating(true)
       return
     }
 
+    // 🎯 ПРИОРИТЕТ #1: JWT токен (email/password логин)
+    const saved = localStorage.getItem('authToken')
+    if (saved) {
+      console.log('🔑 JWT token has priority - using email/password auth')
+      setToken(saved)
+      setIsValidating(false)
+      return
+    }
+
+    // 🎯 ПРИОРИТЕТ #2: NextAuth session (только если нет JWT)
     if (session?.user) {
-      // Пользователь авторизован через NextAuth
-      console.log('✅ NextAuth session found:', session.user)
-      setUser({
-        id: session.user.id || 'nextauth-user',
-        email: session.user.email || '',
-        name: session.user.name || '',
-        avatar: session.user.image || '/user.png',
-      })
+      console.log('✅ NextAuth session found (no JWT conflict):', session.user)
+      
+      // Получаем полные данные профиля через API
+      const fetchNextAuthProfile = async () => {
+        try {
+          const response = await fetch('/api/profile')
+          if (response.ok) {
+            const profile = await response.json()
+            setUser({
+              id: profile.id || session.user.email,
+              email: profile.email || session.user.email,
+              name: profile.name || session.user.name,
+              avatar: profile.avatar || session.user.image || '/user.png',
+            })
+          } else if (response.status === 404) {
+            // Пользователь не найден в базе, нужно перелогиниться
+            console.warn('⚠️ User not found in database. Please log in again.')
+            setUser({
+              id: session.user.id || 'nextauth-user',
+              email: session.user.email || '',
+              name: session.user.name || '',
+              avatar: session.user.image || '/user.png',
+            })
+          } else {
+            // Другая ошибка, используем данные сессии
+            setUser({
+              id: session.user.id || 'nextauth-user',
+              email: session.user.email || '',
+              name: session.user.name || '',
+              avatar: session.user.image || '/user.png',
+            })
+          }
+        } catch (error) {
+          console.error('Error fetching NextAuth profile:', error)
+          // Fallback к данным сессии
+          setUser({
+            id: session.user.id || 'nextauth-user',
+            email: session.user.email || '',
+            name: session.user.name || '',
+            avatar: session.user.image || '/user.png',
+          })
+        }
+      }
+      
+      fetchNextAuthProfile()
       setToken('nextauth-session') // Используем специальный токен для NextAuth
       setIsValidating(false)
     } else {
-      // Проверяем обычный JWT токен
-      const saved = localStorage.getItem('authToken')
-      if (saved) {
-        console.log('🔑 Found JWT token in localStorage')
-        setToken(saved)
-      } else {
-        console.log('👤 No auth found - user is anonymous')
-        setIsValidating(false)
-      }
+      // Нет ни JWT, ни NextAuth - пользователь не авторизован
+      console.log('� No authentication found')
+      setIsValidating(false)
     }
   }, [session, status])
 
@@ -96,8 +137,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
-  // 💾 Login (email + password, или Google) — просто сет токена
-  const login = (jwt: string) => {
+  // 💾 Login (email + password) - очищаем NextAuth и устанавливаем JWT
+  const login = async (jwt: string) => {
+    // Если есть активная NextAuth session - очищаем её
+    if (session) {
+      console.log('🧹 Clearing NextAuth session for JWT login')
+      await signOut({ redirect: false })
+    }
+    
     localStorage.setItem('authToken', jwt)
     setToken(jwt)
   }
@@ -127,12 +174,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 }
 
-  // 🚪 Logout
-  const logout = () => {
+  // 🚪 Logout - очищаем ВСЕ типы аутентификации
+  const logout = async () => {
+    // Очищаем JWT
     localStorage.removeItem('authToken')
     setToken(null)
     setUser(null)
     setIsValidating(false)
+    
+    // Очищаем NextAuth session если есть
+    if (session) {
+      await signOut({ redirect: false })
+    }
   }
 
   return (

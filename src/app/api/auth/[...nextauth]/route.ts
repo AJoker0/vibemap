@@ -35,24 +35,30 @@ export const authOptions: NextAuthOptions = {
       console.log('🔥 Google sign in:', { user, account, profile })
       
       try {
-        // Отправляем данные на наш сервер для сохранения в MongoDB
-        const response = await fetch('http://localhost:5000/auth/google-oauth', {
+        // Создаем/проверяем пользователя через специальный API
+        const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/users/create`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            googleId: user.id,
             email: user.email,
             name: user.name,
             avatar: user.image,
+            googleId: user.id,
           }),
         })
         
-        const result = await response.json()
-        console.log('🔥 User saved to MongoDB:', result)
+        if (response.ok) {
+          const result = await response.json()
+          if (result.exists) {
+            console.log('🔥 Existing user found:', result.username)
+          } else {
+            console.log('🎯 New user created with username:', result.username)
+          }
+        }
         
         return true
       } catch (error) {
-        console.error('❌ Error saving user:', error)
+        console.error('❌ Error checking/creating user profile:', error)
         return true // Все равно разрешаем логин
       }
     },

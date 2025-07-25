@@ -37,17 +37,11 @@ export type ProfileUpdate = {
 export async function getProfile(token: string | null) {
   if (!token) throw new Error('⚠️ No token — user not logged in')
 
-  // Если это NextAuth session, пропускаем запрос к серверу
+  // Если это NextAuth session, используем Next.js API роут
   if (token === 'nextauth-session') {
-    // Возвращаем фиктивный профиль для NextAuth пользователей
-    return {
-      id: 'nextauth-user',
-      name: 'NextAuth User',
-      email: 'user@example.com',
-      avatar: '/user.png',
-      username: 'nextauth_user',
-      notifications: true
-    }
+    const res = await fetch('/api/profile')
+    if (!res.ok) throw new Error('Profile fetch failed')
+    return res.json()
   }
 
   const res = await fetch('http://localhost:5000/profile', {
@@ -79,10 +73,26 @@ export async function getFriends(token: string | null) {
 
 // ✅ Обновить профиль
 export async function updateProfile(data: ProfileUpdate, token: string) {
-  // Если это NextAuth session, просто возвращаем успех
+  // Если это NextAuth session, используем Next.js API роут
   if (token === 'nextauth-session') {
-    console.log('🔄 NextAuth user - profile update simulated')
-    return { success: true }
+    const response = await fetch('/api/profile', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      if (response.status === 409) {
+        // Username уже занят
+        throw new Error(errorData.error || 'Username уже занят')
+      }
+      throw new Error('Failed to update profile')
+    }
+
+    return response.json()
   }
 
   const res = await fetch(`${BASE_URL}/profile`, {

@@ -82,19 +82,39 @@ client.connect().then(() => {
     }
   });
 
-  // ✅ Check username
+  // ✅ Check username across ALL user types
   app.get('/check-username', requireAuth, async (req, res) => {
     const username = req.query.username;
     const userId = req.user.id;
 
     if (!username) return res.status(400).json({ error: 'No username provided' });
 
-    const existing = await db.collection('profiles').findOne({ username });
+    // 🎯 Проверяем во ВСЕХ коллекциях пользователей
+    const checks = await Promise.all([
+      // Проверяем в коллекции JWT пользователей (profiles) - текущий пользователь
+      db.collection('profiles').findOne({ username }),
+      // Проверяем в коллекции NextAuth пользователей (users) - Google OAuth
+      db.collection('users').findOne({ username }).catch(() => null)
+    ]);
 
-    if (existing && existing.userId !== userId) {
-      return res.json({ taken: true });
+    // Находим любого пользователя с таким username
+    const existingUser = checks.find(user => user !== null);
+    
+    // Если username найден и это НЕ текущий пользователь
+    if (existingUser) {
+      // Для JWT пользователей проверяем по userId
+      if (existingUser.userId && existingUser.userId !== userId) {
+        console.log('❌ Username taken by JWT user:', username, 'userId:', existingUser.userId);
+        return res.json({ taken: true });
+      }
+      // Для NextAuth пользователей (у них нет userId в том же формате)
+      if (!existingUser.userId) {
+        console.log('❌ Username taken by NextAuth user:', username, 'email:', existingUser.email);
+        return res.json({ taken: true });
+      }
     }
 
+    console.log('✅ Username available:', username);
     return res.json({ taken: false });
   });
 

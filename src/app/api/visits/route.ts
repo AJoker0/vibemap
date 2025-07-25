@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../auth/[...nextauth]/route'
-import clientPromise from '@/lib/mongodb'
+import { connectToDatabase } from '@/lib/mongodb'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,11 +25,11 @@ export async function POST(request: NextRequest) {
       timestamp
     })
 
-    const client = await clientPromise
-    const db = client.db('vibemap')
+    const { db } = await connectToDatabase()
     
     const visit = {
-      userId: session.user.id,
+      userEmail: session.user.email, // 🎯 Используем email как уникальный ID
+      userName: session.user.name || 'Unknown User',
       lat,
       lng,
       city,
@@ -55,10 +55,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const client = await clientPromise
-    const db = client.db('vibemap')
+    const { db } = await connectToDatabase()
     
-    const visits = await db.collection('visits').find({ userId: session.user.id }).toArray()
+    // Ищем визиты по email пользователя (уникальный идентификатор)
+    const visits = await db
+      .collection('visits')
+      .find({ userEmail: session.user.email })
+      .sort({ timestamp: -1 })
+      .toArray()
     
     return NextResponse.json(visits)
   } catch (error) {

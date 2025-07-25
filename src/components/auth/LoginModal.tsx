@@ -18,7 +18,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
       const res = await loginUser(email, password)
 
       if (res.token) {
-        login(res.token)
+        await login(res.token)
         onClose()
       } else {
         alert(res.error || 'Login failed')

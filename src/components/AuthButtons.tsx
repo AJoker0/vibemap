@@ -30,7 +30,7 @@ export default function AuthButtons() {
       if (!res.ok) throw new Error(data.error || 'Ошибка')
       if (!data.token) throw new Error('❌ No token returned')
 
-      login(data.token)
+      await login(data.token)
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message || 'Неизвестная ошибка')

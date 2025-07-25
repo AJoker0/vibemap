@@ -25,3 +25,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 export default clientPromise
+
+// Утилита для подключения к базе данных
+export async function connectToDatabase() {
+  const client = await clientPromise
+  const db = client.db('vibemap')
+  return { client, db }
+}
