@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import {
   MapContainer,
   TileLayer,
@@ -253,46 +253,59 @@ export default function LeafletMap() {
     requestGeolocation()
   }, [requestGeolocation])
 
+  // 🔄 Функция для загрузки визитов и пересчета городов
+  const fetchVisitsAndCities = useCallback(async () => {
+    if (!token) return
+
+    try {
+      // Загружаем визиты для всех авторизованных пользователей
+      let visits = []
+      if (token === 'nextauth-session') {
+        // Для NextAuth пользователей используем Next.js API роут
+        const visitsRes = await fetch('/api/visits')
+        if (visitsRes.ok) {
+          visits = await visitsRes.json()
+        }
+      } else {
+        // Для JWT пользователей используем Express сервер
+        const visitsRes = await fetch('http://localhost:5000/visits', {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        if (visitsRes.ok) {
+          visits = await visitsRes.json()
+        }
+      }
+      
+      const cityCounts: Record<string, number> = {}
+      visits.forEach((v: { city: string }) => {
+        cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
+      })
+      const cities = Object.entries(cityCounts).map(([name, places]) => ({
+        name,
+        places,
+      }))
+      setVisitedCities(cities)
+      console.log('🏙️ Updated cities list:', cities)
+    } catch (error) {
+      console.error('💥 Ошибка при загрузке визитов:', error)
+    }
+  }, [token])
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         if (!token) return
         const friends = await getFriends(token)
-        
-        // Загружаем визиты для всех авторизованных пользователей
-        let visits = []
-        if (token === 'nextauth-session') {
-          // Для NextAuth пользователей используем Next.js API роут
-          const visitsRes = await fetch('/api/visits')
-          if (visitsRes.ok) {
-            visits = await visitsRes.json()
-          }
-        } else {
-          // Для JWT пользователей используем Express сервер
-          const visitsRes = await fetch('http://localhost:5000/visits', {
-            headers: { Authorization: `Bearer ${token}` },
-          })
-          if (visitsRes.ok) {
-            visits = await visitsRes.json()
-          }
-        }
-        
-        const cityCounts: Record<string, number> = {}
-        visits.forEach((v: { city: string }) => {
-          cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
-        })
-        const cities = Object.entries(cityCounts).map(([name, places]) => ({
-          name,
-          places,
-        }))
         setUserFriends(friends)
-        setVisitedCities(cities)
+        
+        // Загружаем визиты и города
+        await fetchVisitsAndCities()
       } catch (error) {
         console.error('💥 Ошибка при загрузке данных:', error)
       }
     }
     if (token) fetchData()
-  }, [token])
+  }, [token, fetchVisitsAndCities])
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -306,6 +319,17 @@ export default function LeafletMap() {
     window.addEventListener('keydown', handleKey)
     return () => window.removeEventListener('keydown', handleKey)
   }, [])
+
+  // 🔄 Слушаем событие добавления визита для обновления списка городов
+  useEffect(() => {
+    const handleVisitAdded = () => {
+      console.log('📍 Visit added - refreshing cities list in LeafletMap')
+      fetchVisitsAndCities()
+    }
+
+    window.addEventListener('visitAdded', handleVisitAdded)
+    return () => window.removeEventListener('visitAdded', handleVisitAdded)
+  }, [fetchVisitsAndCities])
 
   const centerMapToUser = () => {
     if (mapRef.current && userLocation) {
@@ -484,6 +508,9 @@ export default function LeafletMap() {
                           }),
                         })
                         console.log('✅ NextAuth user visit saved successfully')
+                        
+                        // 🔄 Уведомляем другие компоненты об обновлении
+                        window.dispatchEvent(new CustomEvent('visitAdded'))
                       } else {
                         // Для JWT пользователей используем Express сервер
                         await fetch('http://localhost:5000/visits', {
@@ -501,6 +528,9 @@ export default function LeafletMap() {
                           }),
                         })
                         console.log('✅ JWT user visit saved successfully')
+                        
+                        // 🔄 Уведомляем другие компоненты об обновлении  
+                        window.dispatchEvent(new CustomEvent('visitAdded'))
                       }
                     } catch (error) {
                       console.log('⚠️ Could not save visit to server:', error)

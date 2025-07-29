@@ -32,9 +32,10 @@ type Props = {
   onClose: () => void
   friends: Friend[]
   cities: City[]
+  onRefresh?: () => void // 🔄 Колбэк для уведомления о необходимости обновления
 }
 
-export function ProfileModal({ onClose, friends, cities }: Props) {
+export function ProfileModal({ onClose, friends, cities, onRefresh }: Props) {
   const [avatar, setAvatar] = useState('/user.png')
   const [name, setName] = useState('Loading...')
   const [activeTab, setActiveTab] = useState<'friends' | 'cities'>('friends')
@@ -43,46 +44,64 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
 
   const { token } = useAuth()
 
+  // 🔄 Функция для загрузки/обновления визитов
+  const fetchVisits = async () => {
+    if (!token) return []
+
+    try {
+      let visits: Visit[] = []
+      if (token === 'nextauth-session') {
+        // Для NextAuth пользователей используем Next.js API роут
+        const visitsRes = await fetch('/api/visits')
+        if (visitsRes.ok) {
+          visits = await visitsRes.json()
+        }
+      } else {
+        // Для JWT пользователей используем Express сервер
+        const visitsRes = await fetch('http://localhost:5000/visits', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (visitsRes.ok) {
+          visits = await visitsRes.json()
+        }
+      }
+      return visits
+    } catch (error) {
+      console.error('❌ Error fetching visits:', error)
+      return []
+    }
+  }
+
+  // 🔄 Функция для обновления топ города
+  const updateTopCity = (visits: Visit[]) => {
+    const cityCounts: Record<string, number> = {}
+    visits.forEach((v) => {
+      cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
+    })
+
+    const sorted = Object.entries(cityCounts).sort((a, b) => b[1] - a[1])
+    if (sorted.length > 0) {
+      setTopCity({ name: sorted[0][0], places: sorted[0][1] })
+    } else {
+      setTopCity(null)
+    }
+  }
+
   useEffect(() => {
     const fetchProfile = async () => {
       if (!token) return // 🛑 Без токена не выходим в сеть
 
       try {
         const profile = await getProfile(token)
-        
-        // Загружаем визиты для всех авторизованных пользователей
-        let visits: Visit[] = []
-        if (token === 'nextauth-session') {
-          // Для NextAuth пользователей используем Next.js API роут
-          const visitsRes = await fetch('/api/visits')
-          if (visitsRes.ok) {
-            visits = await visitsRes.json()
-          }
-        } else {
-          // Для JWT пользователей используем Express сервер
-          const visitsRes = await fetch('http://localhost:5000/visits', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-
-          if (visitsRes.ok) {
-            visits = await visitsRes.json()
-          }
-        }
-        
         setName(profile.name)
         setAvatar(profile.avatar)
 
-        const cityCounts: Record<string, number> = {}
-        visits.forEach((v) => {
-          cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
-        })
-
-        const sorted = Object.entries(cityCounts).sort((a, b) => b[1] - a[1])
-        if (sorted.length > 0) {
-          setTopCity({ name: sorted[0][0], places: sorted[0][1] })
-        }
+        // Загружаем и обновляем визиты
+        const visits = await fetchVisits()
+        updateTopCity(visits)
       } catch (err) {
         console.error('❌ fetchProfile error:', err)
       }
@@ -92,6 +111,23 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
       fetchProfile()
     }
   }, [token]) // 🔁 запускается только когда token будет готов
+
+  // 🔄 Функция для обновления данных извне
+  const refreshData = async () => {
+    const visits = await fetchVisits()
+    updateTopCity(visits)
+  }
+
+  // 🔄 Слушаем событие обновления визитов
+  useEffect(() => {
+    const handleVisitAdded = () => {
+      console.log('📍 Visit added - refreshing profile data')
+      refreshData()
+    }
+
+    window.addEventListener('visitAdded', handleVisitAdded)
+    return () => window.removeEventListener('visitAdded', handleVisitAdded)
+  }, [token])
 
   const handleSave = async () => {
     if (!token) {
