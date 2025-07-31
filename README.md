@@ -143,6 +143,17 @@ pnpm dev
 ```bash
 pnpm dev:all
 ```
+### 🔧 5. Dev start!
+```bash
+# Запуск полной системы активных вайбов
+pnpm dev:vibes
+
+# Остановка всего
+pnpm stop:all
+
+# Полная перезагрузка
+pnpm dev:clean
+```
 
 Open frontend:
 📡 [http://localhost:3000](http://localhost:3000)
