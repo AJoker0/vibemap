@@ -14,7 +14,11 @@
     "build-storybook": "storybook build",
     "serve:db": "json-server --watch db.json --port 5000",
     "db": "json-server --watch db.json --port 5000",
-    "dev:all": "concurrently \"pnpm dev\" \"pnpm dev:api\"",
+    "dev:all": "concurrently --names \"NEXT,API,DOCKER\" --prefix-colors \"blue,green,yellow\" \"pnpm dev\" \"pnpm dev:api\" \"pnpm docker:up\"",
+    "dev:full": "pnpm docker:up && concurrently --names \"NEXT,API\" --prefix-colors \"blue,green\" \"pnpm dev\" \"pnpm dev:api\"",
+    "dev:vibes": "pnpm docker:up && concurrently --names \"🌍NEXT,🚀API\" --prefix-colors \"blue,green\" \"pnpm dev\" \"pnpm dev:api\"",
+    "dev:clean": "pnpm docker:down && pnpm dev:vibes",
+    "stop:all": "pnpm docker:down",
     "typecheck": "tsc --noEmit",
     "test": "echo \"No tests specified\" && exit 0"
   },

@@ -19,7 +19,9 @@ import { MapLayerSelector } from './MapLayerSelector'
 import { CountryBadge } from './CountryBadge'
 import { SettingsModal } from '../settings/SettingsModal'
 import { ProfileModal } from '../profile/ProfileModal'
+import { GlobalVibesModal } from './GlobalVibesModal'
 import { getFriends, getCityFromCoords } from '@/lib/api'
+import { getCountryFromCoords } from '@/lib/geocoding'
 import { useAuth } from '@/context/AuthContext'
 
 type Friend = {
@@ -208,6 +210,7 @@ export default function LeafletMap() {
   const [isLayerSelectorOpen, setIsLayerSelectorOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [globalVibesOpen, setGlobalVibesOpen] = useState(false)
   const [userFriends, setUserFriends] = useState<Friend[]>([])
   const [visitedCities, setVisitedCities] = useState<City[]>([])
   const { token } = useAuth()
@@ -234,6 +237,13 @@ export default function LeafletMap() {
     setSettingsOpen(false)
     setProfileOpen(false)
     setIsLayerSelectorOpen(prev => !prev)
+  }
+
+  const openGlobalVibes = () => {
+    setSettingsOpen(false)
+    setProfileOpen(false)
+    setIsLayerSelectorOpen(false)
+    setGlobalVibesOpen(true)
   }
 
   const requestGeolocation = useCallback(() => {
@@ -365,6 +375,13 @@ export default function LeafletMap() {
       {userLocation && <CountryBadge coords={userLocation} />}
       <div className="top-right-ui">
         <button
+          className="global-vibes-button"
+          onClick={openGlobalVibes}
+          title="Глобальная статистика вайбов"
+        >
+          🌍
+        </button>
+        <button
           className="profile-button"
           onClick={openProfile}
         >
@@ -404,6 +421,12 @@ export default function LeafletMap() {
         </div>
       </div>
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      {globalVibesOpen && (
+        <GlobalVibesModal
+          isOpen={globalVibesOpen}
+          onClose={() => setGlobalVibesOpen(false)}
+        />
+      )}
       {profileOpen && (
         <ProfileModal
           onClose={() => setProfileOpen(false)}
@@ -488,12 +511,16 @@ export default function LeafletMap() {
                     userLocation[0],
                     userLocation[1]
                   )
+                  const country = await getCountryFromCoords(
+                    userLocation[0],
+                    userLocation[1]
+                  )
                   
                   // Сохраняем визит для всех авторизованных пользователей
                   if (token) {
                     try {
                       if (token === 'nextauth-session') {
-                        // Для NextAuth пользователей используем Next.js API роут
+                        // Для NextAuth пользователей используем Next.js API роуты
                         await fetch('/api/visits', {
                           method: 'POST',
                           headers: {
@@ -508,6 +535,13 @@ export default function LeafletMap() {
                           }),
                         })
                         console.log('✅ NextAuth user visit saved successfully')
+                        
+                        // ✅ Сохраняем активный вайб через Next.js API
+                        fetch('/api/active-vibe', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ emoji, country, city, lat: userLocation[0], lng: userLocation[1] })
+                        }).then(r => r.ok && console.log('✅ NextAuth Active vibe saved')).catch(e => console.log('⚠️ NextAuth Active vibe failed', e))
                         
                         // 🔄 Уведомляем другие компоненты об обновлении
                         window.dispatchEvent(new CustomEvent('visitAdded'))
@@ -528,6 +562,16 @@ export default function LeafletMap() {
                           }),
                         })
                         console.log('✅ JWT user visit saved successfully')
+                        
+                        // Сохраняем активный вайб для JWT пользователей
+                        fetch('http://localhost:5000/active-vibe', {
+                          method: 'POST',
+                          headers: { 
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                          },
+                          body: JSON.stringify({ emoji, country, city, lat: userLocation[0], lng: userLocation[1] })
+                        }).then(r => r.ok && console.log('✅ JWT Active vibe saved')).catch(e => console.log('⚠️ JWT Active vibe failed', e))
                         
                         // 🔄 Уведомляем другие компоненты об обновлении  
                         window.dispatchEvent(new CustomEvent('visitAdded'))
