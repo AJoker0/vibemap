@@ -211,3 +211,4 @@ Open backend (API):
 ---
 
 # 🔥 `git push && go dominate that internship 🧑‍💼`
+<img width="960" height="1280" alt="зображення" src="https://github.com/user-attachments/assets/5357ace0-c52e-4a40-8836-f08aabcc4ec0" />
