@@ -131,21 +131,32 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
           )}
           
           {!loading && !error && items.length > 0 && (
-            <div className="country-vibes-grid">
-              {items.map((c) => (
-                <div key={c.country} className="country-vibe-card">
-                  <div className="country-header">
-                    <span className="country-name">{c.country}</span>
-                    <span className="vibe-count">Всего: {c.total}</span>
-                  </div>
-                  <div className="vibe-display">
-                    <span className="vibe-emoji">{c.topEmoji.emoji}</span>
-                  </div>
-                  <div className="fun-message">
-                    Страна: <b>{c.country}</b> • Большое количество эмоции: <span style={{fontSize:'1.1rem'}}>{c.topEmoji.emoji}</span> <b>{c.topEmoji.count}</b>
-                  </div>
-                </div>
-              ))}
+            <div>
+              {(() => {
+                // Сортируем по количеству лидирующей эмоции (как в примере)
+                const sorted = [...items].sort((a, b) => b.topEmoji.count - a.topEmoji.count)
+                const plural = (n: number) => {
+                  const mod10 = n % 10
+                  const mod100 = n % 100
+                  if (mod10 === 1 && mod100 !== 11) return 'пользователь'
+                  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'пользователя'
+                  return 'пользователей'
+                }
+                return (
+                  <ol className="rank-list">
+                    {sorted.map((c, idx) => (
+                      <li key={c.country} className="rank-item">
+                        <span className="rank-index">{idx + 1})</span>
+                        <span className="rank-country">{c.country}</span>
+                        <span className="rank-emoji">{c.topEmoji.emoji}</span>
+                        <span className="rank-count">
+                          {c.topEmoji.count} {plural(c.topEmoji.count)}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                )
+              })()}
             </div>
           )}
         </div>
@@ -349,6 +360,47 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
           .modal-body {
             padding: 16px;
           }
+        }
+
+        /* 📊 Ranked list styles */
+        .rank-list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .rank-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 10px 12px;
+          border: 1px solid #e5e7eb;
+          border-radius: 10px;
+          background: #f9fafb;
+        }
+        .rank-index {
+          font-weight: 700;
+          color: #6b7280;
+          width: 36px;
+        }
+        .rank-country {
+          font-weight: 700;
+          color: #111827;
+        }
+        .rank-emoji {
+          font-size: 1.25rem;
+          margin-left: 6px;
+        }
+        .rank-count {
+          margin-left: auto;
+          background: #eef2ff;
+          color: #3730a3;
+          padding: 4px 10px;
+          border-radius: 9999px;
+          font-weight: 600;
+          font-size: 0.9rem;
         }
       `}</style>
     </div>
