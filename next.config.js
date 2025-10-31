@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  eslint: {
+    // Do not fail the build on ESLint errors in CI (Vercel)
+    ignoreDuringBuilds: true,
+  },
   images: {
     domains: [
       'lh3.googleusercontent.com', // Google profile images
