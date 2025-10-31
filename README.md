@@ -143,6 +143,17 @@ pnpm dev
 ```bash
 pnpm dev:all
 ```
+### 🔧 5. Dev start!
+```bash
+# Запуск полной системы активных вайбов
+pnpm dev:vibes
+
+# Остановка всего
+pnpm stop:all
+
+# Полная перезагрузка
+pnpm dev:clean
+```
 
 Open frontend:
 📡 [http://localhost:3000](http://localhost:3000)
@@ -200,3 +211,4 @@ Open backend (API):
 ---
 
 # 🔥 `git push && go dominate that internship 🧑‍💼`
+<img width="960" height="1280" alt="зображення" src="https://github.com/user-attachments/assets/5357ace0-c52e-4a40-8836-f08aabcc4ec0" />
