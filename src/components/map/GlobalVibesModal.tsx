@@ -5,11 +5,10 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
 
-type CountryVibe = {
+type CountryStat = {
   country: string
-  emoji: string
-  count: number
-  funMessage: string
+  total: number
+  topEmoji: { emoji: string; count: number }
 }
 
 type Props = {
@@ -19,7 +18,7 @@ type Props = {
 
 export function GlobalVibesModal({ isOpen, onClose }: Props) {
   const { token } = useAuth()
-  const [globalVibes, setGlobalVibes] = useState<CountryVibe[]>([])
+  const [items, setItems] = useState<CountryStat[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -55,7 +54,33 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
       }
       
       const data = await response.json()
-      setGlobalVibes(data.countries || [])
+      // Нормализуем возможные ответы разных API
+      const raw = Array.isArray(data)
+        ? data
+        : Array.isArray(data.countries)
+          ? data.countries
+          : []
+
+      const normalized: CountryStat[] = raw.map((row: any) => {
+        // Вариант Next.js API: { country, totalPeople, topVibe: {emoji,count} }
+        if (row.topVibe && (row.totalPeople || row.total)) {
+          return {
+            country: row.country,
+            total: row.totalPeople ?? row.total,
+            topEmoji: { emoji: row.topVibe.emoji, count: row.topVibe.count },
+          }
+        }
+        // Вариант Express (если отличается) или fallback
+        if (row.country && row.vibes && Array.isArray(row.vibes) && row.vibes.length) {
+          const top = [...row.vibes].sort((a: any, b: any) => b.count - a.count)[0]
+          const total = row.vibes.reduce((s: number, v: any) => s + (v.count || 0), 0)
+          return { country: row.country, total, topEmoji: { emoji: top.emoji, count: top.count } }
+        }
+        // Самый простой кейс: плоская запись
+        return { country: row.country ?? 'Unknown', total: row.count ?? 0, topEmoji: { emoji: row.emoji ?? '❓', count: row.count ?? 0 } }
+      })
+
+      setItems(normalized)
     } catch (err) {
       console.error('❌ Error fetching global vibes:', err)
       setError('Не удалось загрузить глобальную статистику')
@@ -63,6 +88,13 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
       setLoading(false)
     }
   }
+
+  // Автообновление после добавления визита/вайба
+  useEffect(() => {
+    const handler = () => fetchGlobalVibes()
+    window.addEventListener('visitAdded', handler)
+    return () => window.removeEventListener('visitAdded', handler)
+  }, [])
 
   if (!isOpen) return null
 
@@ -91,28 +123,26 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
             </div>
           )}
           
-          {!loading && !error && globalVibes.length === 0 && (
+          {!loading && !error && items.length === 0 && (
             <div className="empty-state">
               <p>🤔 Пока нет активных вайбов в последние 24 часа</p>
               <p>Будь первым, кто поделится настроением!</p>
             </div>
           )}
           
-          {!loading && !error && globalVibes.length > 0 && (
+          {!loading && !error && items.length > 0 && (
             <div className="country-vibes-grid">
-              {globalVibes.map((countryData, index) => (
-                <div key={`${countryData.country}-${countryData.emoji}`} className="country-vibe-card">
+              {items.map((c) => (
+                <div key={c.country} className="country-vibe-card">
                   <div className="country-header">
-                    <span className="country-name">{countryData.country}</span>
-                    <span className="vibe-count">{countryData.count} чел.</span>
+                    <span className="country-name">{c.country}</span>
+                    <span className="vibe-count">Всего: {c.total}</span>
                   </div>
-                  
                   <div className="vibe-display">
-                    <span className="vibe-emoji">{countryData.emoji}</span>
+                    <span className="vibe-emoji">{c.topEmoji.emoji}</span>
                   </div>
-                  
                   <div className="fun-message">
-                    {countryData.funMessage}
+                    Страна: <b>{c.country}</b> • Большое количество эмоции: <span style={{fontSize:'1.1rem'}}>{c.topEmoji.emoji}</span> <b>{c.topEmoji.count}</b>
                   </div>
                 </div>
               ))}
