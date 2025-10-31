@@ -1,142 +1,74 @@
-// src/app/api/global-vibes/route.ts - Глобальная статистика вайбов по странам
+// src/app/api/global-vibes/route.ts - Глобальная статистика вайбов по странам (24 часа)
+
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 import { NextResponse } from 'next/server'
 import { connectToDatabase } from '@/lib/mongodb'
 
-// GET - получить глобальную статистику вайбов по странам
+// Возвращает список стран с лидирующей эмоцией и общим числом активных вайбов
+// Статистика за последние 24 часа: учитываем документы с createdAt >= since
+// и/или неистекшие по TTL (expiresAt >= now)
 export async function GET() {
   try {
     const { db } = await connectToDatabase()
-    
-    // Сначала удаляем все истекшие вайбы
-    await db.collection('activeVibes').deleteMany({
-      expiresAt: { $lt: new Date() }
-    })
-    
-    // Группируем активные вайбы по странам и эмодзи
+
+    const now = new Date()
+    const since = new Date(now.getTime() - 24 * 60 * 60 * 1000)
+
     const pipeline = [
       {
-        $group: {
-          _id: { 
-            country: '$country',
-            emoji: '$emoji' 
-          },
-          count: { $sum: 1 },
-          cities: { $addToSet: '$city' }
-        }
+        $match: {
+          $and: [
+            { country: { $type: 'string' } },
+            { emoji: { $type: 'string' } },
+            {
+              $or: [
+                { expiresAt: { $gte: now } }, // активные записи по TTL
+                { createdAt: { $gte: since } }, // или явно добавленные за 24ч
+              ],
+            },
+          ],
+        },
       },
+      // Считаем количество для каждой пары (страна, эмодзи)
+      {
+        $group: {
+          _id: { country: '$country', emoji: '$emoji' },
+          count: { $sum: 1 },
+        },
+      },
+      // Сортируем так, чтобы первый элемент в стране был лидер
+      { $sort: { '_id.country': 1, count: -1 } },
+      // Собираем по стране: total и topEmoji
       {
         $group: {
           _id: '$_id.country',
-          vibes: {
-            $push: {
-              emoji: '$_id.emoji',
-              count: '$count',
-              cities: '$cities'
-            }
-          },
-          totalPeople: { $sum: '$count' }
-        }
+          total: { $sum: '$count' },
+          topEmoji: { $first: { emoji: '$_id.emoji', count: '$count' } },
+        },
       },
       {
         $project: {
+          _id: 0,
           country: '$_id',
-          vibes: 1,
-          totalPeople: 1,
-          topVibe: { $arrayElemAt: [{ $sortArray: { input: '$vibes', sortBy: { count: -1 } } }, 0] }
-        }
+          total: 1,
+          topEmoji: 1,
+        },
       },
-      { $sort: { totalPeople: -1 } }
+      // Финальный рейтинг: по лидер‑эмодзи, затем total, затем страна
+      { $sort: { 'topEmoji.count': -1, total: -1, country: 1 } },
     ]
-    
-    const globalStats = await db.collection('activeVibes').aggregate(pipeline).toArray()
-    
-    // Добавляем прикольные подписи для стран
-    const funMessages: Record<string, Record<string, string>> = {
-      'Bulgaria': {
-        '😄': 'Bulgarians are happy today!',
-        '💪': 'Bulgarian power!',
-        '🏃': 'Runners from Bulgaria!',
-        '🎉': 'Party time in Bulgaria!',
-        '😴': 'Sleepy Bulgaria vibes',
-        '🌟': 'Bulgaria is shining!',
-        '❤️': 'Love from Bulgaria!'
-      },
-      'France': {
-        '💪': 'Wow, French people are sporty!',
-        '🍷': 'French wine vibes!',
-        '🎨': 'Artistic French souls!',
-        '😄': 'Happy French people!',
-        '🥖': 'Baguette time in France!',
-        '🌟': 'French elegance!',
-        '❤️': 'Love from France!'
-      },
-      'Italy': {
-        '🍕': 'Pizza time in Italy!',
-        '💪': 'Italian strength!',
-        '🎵': 'Musical Italian vibes!',
-        '😄': 'Joyful Italians!',
-        '☕': 'Italian coffee culture!',
-        '🌟': 'Italian passion!',
-        '❤️': 'Amore from Italy!'
-      },
-      'Germany': {
-        '💪': 'German efficiency and strength!',
-        '🍺': 'German beer culture!',
-        '⚽': 'Football loving Germans!',
-        '😄': 'Happy Germans today!',
-        '🌟': 'German precision!',
-        '❤️': 'Love from Germany!'
-      },
-      'Spain': {
-        '💃': 'Flamenco vibes from Spain!',
-        '☀️': 'Sunny Spanish mood!',
-        '🎉': 'Fiesta time in Spain!',
-        '💪': 'Strong Spanish spirit!',
-        '😄': 'Happy Spanish people!',
-        '❤️': 'Amor from Spain!'
-      },
-      'United Kingdom': {
-        '☔': 'Classic British weather mood!',
-        '☕': 'Tea time in the UK!',
-        '💪': 'British resilience!',
-        '😄': 'Happy Brits today!',
-        '🌟': 'British brilliance!',
-        '❤️': 'Love from the UK!'
-      },
-      'USA': {
-        '💪': 'American strength!',
-        '🦅': 'Freedom vibes from USA!',
-        '🍔': 'American food culture!',
-        '😄': 'Happy Americans!',
-        '🌟': 'American dreams!',
-        '❤️': 'Love from USA!'
-      },
-      'Canada': {
-        '🍁': 'Canadian maple vibes!',
-        '😄': 'Happy Canadians, eh!',
-        '💪': 'Strong Canadian spirit!',
-        '🌟': 'Canadian kindness!',
-        '❤️': 'Love from Canada!'
-      }
-    }
-    
-    // Добавляем сообщения к результатам
-    const enrichedStats = globalStats.map(stat => {
-      const country = stat.country
-      const topEmoji = stat.topVibe?.emoji
-      const message = funMessages[country]?.[topEmoji] || `${country} vibes: ${topEmoji}`
-      
-      return {
-        ...stat,
-        message
-      }
-    })
-    
-    console.log(`🌍 Global vibes requested: ${globalStats.length} countries active`)
-    return NextResponse.json(enrichedStats)
+
+    const countries = await db
+      .collection('activeVibes')
+      .aggregate(pipeline)
+      .toArray()
+
+    return NextResponse.json({ countries })
   } catch (error) {
     console.error('❌ Error fetching global vibes:', error)
-    return NextResponse.json({ error: 'Failed to fetch global vibes' }, { status: 500 })
+    return NextResponse.json({ countries: [] }, { status: 500 })
   }
 }
