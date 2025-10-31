@@ -94,12 +94,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: session.user.name || '',
             avatar: session.user.image || '/user.png',
           })
+        } finally {
+          // ВАЖНО: завершаем фазу валидации только после установки user,
+          // иначе / страница успевает редиректнуть на /auth
+          setIsValidating(false)
         }
       }
       
-      fetchNextAuthProfile()
       setToken('nextauth-session') // Используем специальный токен для NextAuth
-      setIsValidating(false)
+      fetchNextAuthProfile()
     } else {
       // Нет ни JWT, ни NextAuth - пользователь не авторизован
       console.log('� No authentication found')

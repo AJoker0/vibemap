@@ -4,7 +4,7 @@
 
 import { GoogleLoginButton } from '@/components/GoogleLoginButton'
 import { useAuth } from '@/context/AuthContext'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { register, loginUser } from '@/lib/auth'
 
@@ -14,8 +14,16 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { login, loginWithGoogle } = useAuth()
+  const { login, loginWithGoogle, token } = useAuth()
   const router = useRouter()
+  
+  // ✅ Если пользователь уже авторизован (JWT или NextAuth), уводим с /auth на главную
+  useEffect(() => {
+    // Наличие токена (включая 'nextauth-session') достаточно, чтобы уйти на главную
+    if (token) {
+      router.replace('/')
+    }
+  }, [token, router])
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
