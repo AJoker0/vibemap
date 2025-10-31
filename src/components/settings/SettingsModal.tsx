@@ -35,11 +35,12 @@ export function SettingsModal({ onClose }: Props) {
   const [birthday, setBirthday] = useState('')
   const [showUsernameHint, setShowUsernameHint] = useState(false)
 
-  const { token } = useAuth()
+  const { token, logout } = useAuth()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Используем единый logout из контекста: очищает JWT и NextAuth
+    await logout()
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('authToken')
       window.location.href = '/auth'
     }
   }
