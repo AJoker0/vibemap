@@ -1,8 +1,8 @@
-// eslint.config.js (ESLint v9+ flat config)
-import js from '@eslint/js';
-import tseslint from 'typescript-eslint';
-import prettier from 'eslint-config-prettier';
-import nextPlugin from '@next/eslint-plugin-next';
+// eslint.config.mjs (ESLint v9+ flat config, ESM)
+import js from '@eslint/js'
+import tseslint from 'typescript-eslint'
+import prettier from 'eslint-config-prettier'
+import nextPlugin from '@next/eslint-plugin-next'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
@@ -10,11 +10,11 @@ export default [
   ...tseslint.configs.recommended,
   {
     rules: {
-      // Отключаем строгие правила которые не критичны для работы
+      // Мягкие предупреждения, не блокируют разработку
       '@typescript-eslint/no-unused-vars': 'warn',
-      '@typescript-eslint/no-explicit-any': 'warn', 
+      '@typescript-eslint/no-explicit-any': 'warn',
       'prefer-const': 'warn',
-      // Next.js правила
+      // Next.js рекомендации
       '@next/next/google-font-display': 'warn',
       '@next/next/google-font-preconnect': 'warn',
       '@next/next/next-script-for-ga': 'warn',
@@ -63,6 +63,7 @@ export default [
   },
   prettier,
   {
+    // Заменяет устаревший .eslintignore
     ignores: [
       'node_modules/**',
       'dist/**',
@@ -76,4 +77,4 @@ export default [
       'data/**',
     ],
   },
-];
+]
