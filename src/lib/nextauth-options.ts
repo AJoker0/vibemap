@@ -48,11 +48,13 @@ export const authOptions: NextAuthOptions = {
         if (response.ok) {
           // We only log server-side; no need to return data
           await response.json().catch(() => null)
+          return true
         }
-        return true
+        console.error('❌ Profile provisioning failed:', response.status)
+        return false
       } catch (error) {
         console.error('❌ Error checking/creating user profile:', error)
-        return true // still allow login
+        return false
       }
     },
   },

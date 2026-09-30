@@ -4,6 +4,7 @@
 
 import { useEffect, useState } from 'react'
 import './profile-modal.css'
+import { authOptions } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 
@@ -57,9 +58,7 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
       } else {
         // Для JWT пользователей используем Express сервер
         const visitsRes = await fetch('http://localhost:5000/visits', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          ...authOptions(token),
         })
 
         if (visitsRes.ok) {
@@ -147,8 +146,9 @@ export function ProfileModal({ onClose, friends, cities }: Props) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          ...((authOptions(token).headers as Record<string, string>) || {}),
         },
+        credentials: token === 'cookie-session' ? 'include' : undefined,
         body: JSON.stringify({ name, avatar }),
       })
 

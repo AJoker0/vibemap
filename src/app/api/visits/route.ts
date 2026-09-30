@@ -2,6 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/nextauth-options'
 import { connectToDatabase } from '@/lib/mongodb'
+import { z } from 'zod'
+
+const visitSchema = z.object({
+  lat: z.number().finite().min(-90).max(90),
+  lng: z.number().finite().min(-180).max(180),
+  city: z.string().trim().min(1).max(120),
+  emoji: z.string().trim().min(1).max(8),
+  timestamp: z.string().datetime().optional(),
+})
+
+const privateCoordinate = (value: number) => Math.round(value * 1000) / 1000
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,18 +22,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { lat, lng, city, emoji, timestamp } = body
+    const parsed = visitSchema.safeParse(await request.json())
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid visit data' }, { status: 400 })
+    }
+
+    const { lat, lng, city, emoji, timestamp } = parsed.data
+    const safeLat = privateCoordinate(lat)
+    const safeLng = privateCoordinate(lng)
 
     // Сохраняем визит в MongoDB
     console.log('📍 NextAuth user visit:', {
       userId: session.user.id,
       email: session.user.email,
-      lat,
-      lng,
+      lat: safeLat,
+      lng: safeLng,
+      location: { type: 'Point', coordinates: [safeLng, safeLat] },
       city,
       emoji,
-      timestamp
+      timestamp: timestamp || new Date().toISOString(),
+      createdAt: new Date(),
     })
 
     const { db } = await connectToDatabase()

@@ -12,10 +12,10 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version-file: '.nvmrc'
           
@@ -23,11 +23,11 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 10
           run_install: false  
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Lint
         run: pnpm lint
@@ -37,3 +37,11 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+      - name: Production build
+        run: pnpm build
+        env:
+          MONGODB_URI: mongodb://localhost:27017/vibemap
+          JWT_SECRET: ci-only-secret-with-at-least-32-characters
+          NEXTAUTH_SECRET: ci-only-nextauth-secret
+          NEXTAUTH_URL: http://localhost:3000

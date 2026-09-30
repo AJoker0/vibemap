@@ -1,0 +1,23 @@
+.page {
+  min-height: 100vh;
+  padding: 48px 20px;
+  color: #dce9ea;
+  background: #0c1b2a;
+}
+
+.card {
+  max-width: 720px;
+  padding: clamp(26px, 6vw, 64px);
+  margin: 0 auto;
+  background: #102638;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+}
+
+.back { color: #8de7d6; font-size: 0.8rem; text-decoration: none; }
+.eyebrow { margin-top: 56px; color: #ff9d89; font-size: 0.72rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.card h1 { margin: 12px 0; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: clamp(2.5rem, 6vw, 4.8rem); letter-spacing: -.06em; line-height: .95; }
+.lead { max-width: 560px; color: #a6bac1; font-size: 1.1rem; line-height: 1.6; }
+.card section { padding-top: 28px; margin-top: 28px; border-top: 1px solid rgba(255,255,255,.1); }
+.card h2 { margin: 0 0 8px; color: #fff; font-family: 'Space Grotesk', sans-serif; font-size: 1.2rem; }
+.card section p { max-width: 580px; margin: 0; color: #a6bac1; line-height: 1.65; }

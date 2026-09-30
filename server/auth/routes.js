@@ -4,8 +4,24 @@ const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const { signToken, isValidEmail, generateUsername } = require('./utils');
 const bcrypt = require('bcryptjs');
+const { z } = require('zod');
+const { env } = require('../config');
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const credentialsSchema = z.object({
+  email: z.string().trim().toLowerCase().email(),
+  password: z.string().min(8).max(128),
+});
+
+function setAuthCookie(res, token) {
+  res.cookie('vibemap_token', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: env.NODE_ENV === 'production',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    path: '/',
+  });
+}
 
 module.exports = (db) => {
   console.log('🔥 Creating auth router...');
@@ -19,12 +35,9 @@ module.exports = (db) => {
   // 🔐 Login - ОБНОВЛЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ
   router.post('/login', async (req, res) => {
     console.log('🔐 Login with email + password');
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '');
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
+    const parsed = credentialsSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Use a valid email and a password with 8-128 characters' });
+    const { email, password } = parsed.data;
 
     try {
       console.log('🔍 Looking for user:', email);
@@ -38,28 +51,21 @@ module.exports = (db) => {
       console.log('✅ User found, checking password...');
       console.log('🔍 User data:', { 
         email: user.email, 
-        hasPassword: !!user.password,
+        hasPassword: !!user.passwordHash,
         hasGoogleId: !!user.googleId,
-        passwordLength: user.password ? user.password.length : 0
       });
 
-      // Проверяем, есть ли хешированный пароль
-      if (!user.password) {
+      const passwordHash = user.passwordHash;
+      if (!passwordHash || !passwordHash.startsWith('$2')) {
         console.log('❌ No password found for user:', email);
         return res.status(401).json({ error: 'User registered with Google. Please use Google login.' });
       }
 
-      const isMatch = await bcrypt.compare(password, user.password);
-
-if (!isMatch && user.password === password) {
-  console.log('⚠️ Using legacy plain password');
-}
-
-if (!isMatch && user.password !== password) {
+      const isMatch = await bcrypt.compare(password, passwordHash);
+      if (!isMatch) {
   console.log('❌ Invalid password for:', email);
-  console.log('🔍 Provided password:', password);
-  return res.status(401).json({ error: 'Invalid password' });
-}
+        return res.status(401).json({ error: 'Invalid email or password' });
+      }
 
 
       const token = signToken({
@@ -68,6 +74,7 @@ if (!isMatch && user.password !== password) {
       });
 
       console.log('✅ Login successful for:', email);
+      setAuthCookie(res, token);
       res.json({
         token,
         user: {
@@ -86,16 +93,9 @@ if (!isMatch && user.password !== password) {
   // 📝 Register
   router.post('/register', async (req, res) => {
     console.log('📝 Register with email + password');
-    const email = String(req.body.email || '').trim().toLowerCase();
-    const password = String(req.body.password || '');
-
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
-    }
-
-    if (password.length < 8) {
-      return res.status(400).json({ error: 'Password must be at least 8 characters' });
-    }
+    const parsed = credentialsSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ error: 'Use a valid email and a password with 8-128 characters' });
+    const { email, password } = parsed.data;
 
     if (!isValidEmail(email)) {
       return res.status(400).json({ error: 'Invalid email format' });
@@ -111,7 +111,7 @@ if (!isMatch && user.password !== password) {
 
       const result = await db.collection('users').insertOne({
         email,
-        password: hashedPassword,
+        passwordHash: hashedPassword,
         name: email.split('@')[0],
         avatar: '/user.png',
         createdAt: new Date(),
@@ -133,6 +133,7 @@ if (!isMatch && user.password !== password) {
         email: email,
       });
 
+      setAuthCookie(res, token);
       res.json({
         token,
         user: {
@@ -201,6 +202,7 @@ if (!isMatch && user.password !== password) {
         email: user.email,
       });
 
+      setAuthCookie(res, token);
       res.json({
         token,
         user: {
@@ -214,6 +216,11 @@ if (!isMatch && user.password !== password) {
       console.error('❌ Google login error:', err);
       res.status(401).json({ error: 'Invalid Google token' });
     }
+  });
+
+  router.post('/logout', (_req, res) => {
+    res.clearCookie('vibemap_token', { httpOnly: true, sameSite: 'lax', path: '/' });
+    res.json({ success: true });
   });
 
   // ✅ NextAuth Google OAuth endpoint

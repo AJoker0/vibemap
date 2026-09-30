@@ -2,6 +2,9 @@
   "name": "vibemap",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "pnpm dev:full",
     "dev:next": "next dev",
@@ -14,15 +17,16 @@
     "lint:fix": "eslint . --fix",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "serve:db": "json-server --watch db.json --port 5000",
-    "db": "json-server --watch db.json --port 5000",
     "dev:all": "pnpm dev:full",
     "dev:full": "node scripts/dev.mjs",
     "dev:vibes": "pnpm dev:full",
     "dev:clean": "pnpm docker:down && pnpm dev:vibes",
     "stop:all": "pnpm docker:down",
     "typecheck": "tsc --noEmit",
-    "test": "echo \"No tests specified\" && exit 0"
+    "db:indexes": "node scripts/create_indexes.mjs",
+    "db:migrate-passwords": "node scripts/migrate_passwords.mjs",
+    "db:merge-duplicates": "node scripts/merge_duplicate_accounts.mjs",
+    "test": "node --test tests/auth.test.cjs"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
@@ -33,11 +37,15 @@
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "clsx": "^2.1.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
+    "dotenv": "^18.0.5",
     "emoji-mart": "^5.6.0",
     "emoji-picker-react": "^4.12.2",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.0",
     "google-auth-library": "^9.15.1",
+    "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.2",
     "jwt-decode": "^4.0.0",
     "leaflet": "^1.9.4",
@@ -49,7 +57,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^5.0.0",
-    "supercluster": "^8.0.1"
+    "supercluster": "^8.0.1",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

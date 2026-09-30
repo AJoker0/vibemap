@@ -21,7 +21,7 @@ import { SettingsModal } from '../settings/SettingsModal'
 import { ProfileModal } from '../profile/ProfileModal'
 import { GlobalVibesModal } from './GlobalVibesModal'
 import { MapSidebar } from './MapSidebar'
-import { getFriends, getCityFromCoords } from '@/lib/api'
+import { authOptions, getFriends, getCityFromCoords } from '@/lib/api'
 import { getCountryFromCoords } from '@/lib/geocoding'
 import { useAuth } from '@/context/AuthContext'
 
@@ -280,7 +280,7 @@ export default function LeafletMap() {
       } else {
         // Для JWT пользователей используем Express сервер
         const visitsRes = await fetch('http://localhost:5000/visits', {
-          headers: { Authorization: `Bearer ${token}` },
+          ...authOptions(token),
         })
         if (visitsRes.ok) {
           visits = await visitsRes.json()
@@ -543,8 +543,9 @@ export default function LeafletMap() {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`,
+                            ...((authOptions(token).headers as Record<string, string>) || {}),
                           },
+                          credentials: token === 'cookie-session' ? 'include' : undefined,
                           body: JSON.stringify({
                             lat: userLocation[0],
                             lng: userLocation[1],
@@ -560,8 +561,9 @@ export default function LeafletMap() {
                           method: 'POST',
                           headers: { 
                             'Content-Type': 'application/json',
-                            Authorization: `Bearer ${token}`
+                            ...((authOptions(token).headers as Record<string, string>) || {}),
                           },
+                          credentials: token === 'cookie-session' ? 'include' : undefined,
                           body: JSON.stringify({ emoji, country, city, lat: userLocation[0], lng: userLocation[1] })
                         }).then(r => r.ok && console.log('✅ JWT Active vibe saved')).catch(e => console.log('⚠️ JWT Active vibe failed', e))
                         

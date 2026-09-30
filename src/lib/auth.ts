@@ -1,6 +1,7 @@
 // src/lib/auth.ts
 
 const BASE_URL = 'http://localhost:5000'
+export const COOKIE_SESSION = 'cookie-session'
 
 export async function register(
   email: string,
@@ -26,6 +27,7 @@ async function requestAuth(
     const res = await fetch(`${BASE_URL}/auth${route}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
     })
     const data = await res.json().catch(() => ({}))

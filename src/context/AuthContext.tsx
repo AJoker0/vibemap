@@ -10,6 +10,7 @@ import React, {
   ReactNode,
 } from 'react'
 import { useSession, signOut } from 'next-auth/react'
+import { COOKIE_SESSION } from '@/lib/auth'
 
 type User = {
   id: string
@@ -42,16 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return
     }
 
-    // 🎯 ПРИОРИТЕТ #1: JWT токен (email/password логин)
-    const saved = localStorage.getItem('authToken')
-    if (saved) {
-      console.log('🔑 JWT token has priority - using email/password auth')
-      setToken(saved)
-      setIsValidating(false)
-      return
-    }
-
-    // 🎯 ПРИОРИТЕТ #2: NextAuth session (только если нет JWT)
+    // NextAuth session is the preferred browser session.
     if (session?.user) {
       console.log('✅ NextAuth session found (no JWT conflict):', session.user)
       
@@ -104,28 +96,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken('nextauth-session') // Используем специальный токен для NextAuth
       fetchNextAuthProfile()
     } else {
-      // Нет ни JWT, ни NextAuth - пользователь не авторизован
-      console.log('� No authentication found')
-      setIsValidating(false)
+      restoreCookieSession()
     }
   }, [session, status])
 
-  // ✅ Проверяем обычный JWT токен при изменении (если не NextAuth)
-  useEffect(() => {
-    if (token && token !== 'nextauth-session') {
-      validateToken(token)
-    }
-  }, [token])
-
-  // 🔍 Проверка JWT через API
-  const validateToken = async (jwt: string) => {
+  const restoreCookieSession = async () => {
     setIsValidating(true)
     try {
       const res = await fetch('http://localhost:5000/profile', {
-        headers: { Authorization: `Bearer ${jwt}` },
+        credentials: 'include',
       })
-      if (!res.ok) throw new Error('Invalid token')
+      if (!res.ok) {
+        setIsValidating(false)
+        return
+      }
       const data = await res.json()
+      setToken(COOKIE_SESSION)
       setUser({
         id: data.userId || data.id || 'unknown',
         email: data.email || 'unknown',
@@ -133,23 +119,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         avatar: data.avatar,
       })
     } catch (err) {
-      console.error('❌ Token validation failed:', err)
-      logout()
+      console.error('Cookie session restore failed:', err)
     } finally {
       setIsValidating(false)
     }
   }
 
   // 💾 Login (email + password) - очищаем NextAuth и устанавливаем JWT
-  const login = async (jwt: string) => {
+  const login = async (_jwt: string) => {
     // Если есть активная NextAuth session - очищаем её
     if (session) {
       console.log('🧹 Clearing NextAuth session for JWT login')
       await signOut({ redirect: false })
     }
     
-    localStorage.setItem('authToken', jwt)
-    setToken(jwt)
+    await restoreCookieSession()
   }
 
   // 🔐 Google login handler
@@ -157,6 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const res = await fetch('http://localhost:5000/auth/google', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify({ id_token }),
   })
 
@@ -169,9 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const data = await res.json()
 
   if (data.token) {
-    localStorage.setItem('authToken', data.token)
-    setToken(data.token)
-    setUser(data.user)
+    await restoreCookieSession()
   } else {
     throw new Error('Нет токена в ответе от сервера')
   }
@@ -180,7 +163,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   // 🚪 Logout - очищаем ВСЕ типы аутентификации
   const logout = async () => {
     // Очищаем JWT
-    localStorage.removeItem('authToken')
+    await fetch('http://localhost:5000/auth/logout', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => undefined)
     setToken(null)
     setUser(null)
     setIsValidating(false)

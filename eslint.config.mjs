@@ -49,7 +49,7 @@ export default [
     },
   },
   {
-    files: ['**/*.js', '**/*.mjs'],
+    files: ['**/*.js', '**/*.mjs', '**/*.cjs'],
     rules: {
       // Сервер и служебные скрипты используют CommonJS.
       '@typescript-eslint/no-require-imports': 'off',
@@ -88,6 +88,7 @@ export default [
       'dist/**',
       'build/**',
       '.next/**',
+      '.next-dev/**',
       '*.config.js',
       '*.config.cjs',
       '*.config.mjs',

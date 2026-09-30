@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
+const { env } = require('../config');
 
 // Функция для создания JWT токена
 const signToken = (payload) => {
-  return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key-vibemap-2024', {
+  return jwt.sign(payload, env.JWT_SECRET, {
     expiresIn: '7d'
   });
 };
@@ -10,7 +11,7 @@ const signToken = (payload) => {
 // Функция для проверки JWT токена
 const verifyToken = (token) => {
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key-vibemap-2024');
+    return jwt.verify(token, env.JWT_SECRET);
   } catch (err) {
     throw new Error('Invalid token');
   }

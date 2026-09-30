@@ -51,5 +51,7 @@ log/
 *.turtle
 *.bson
 *.log
+errors.txt
+*.bak
 diagnostic.data/
 journal/

@@ -4,6 +4,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/nextauth-options'
 import { connectToDatabase } from '@/lib/mongodb'
+import { z } from 'zod'
+
+const activeVibeSchema = z.object({
+  emoji: z.string().trim().min(1).max(8),
+  lat: z.number().finite().min(-90).max(90),
+  lng: z.number().finite().min(-180).max(180),
+  city: z.string().trim().min(1).max(120),
+  country: z.string().trim().min(1).max(120),
+})
+
+const privateCoordinate = (value: number) => Math.round(value * 1000) / 1000
 
 // GET - получить текущий активный вайб
 export async function GET() {
@@ -47,12 +58,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json()
-    const { emoji, lat, lng, city, country } = body
-    
-    if (!emoji || !lat || !lng || !city || !country) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
-    }
+    const parsed = activeVibeSchema.safeParse(await request.json())
+    if (!parsed.success) return NextResponse.json({ error: 'Invalid active vibe data' }, { status: 400 })
+    const { emoji, lat, lng, city, country } = parsed.data
+    const safeLat = privateCoordinate(lat)
+    const safeLng = privateCoordinate(lng)
     
     const { db } = await connectToDatabase()
     const userId = session.user.email
@@ -63,8 +73,9 @@ export async function POST(request: NextRequest) {
     const activeVibe = {
       userId,
       emoji,
-      lat,
-      lng,
+      lat: safeLat,
+      lng: safeLng,
+      location: { type: 'Point', coordinates: [safeLng, safeLat] },
       city,
       country,
       createdAt: now,

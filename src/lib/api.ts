@@ -1,4 +1,11 @@
+import { COOKIE_SESSION } from './auth'
+
 const BASE_URL = 'http://localhost:5000'
+
+export function authOptions(token?: string | null): RequestInit {
+  if (token === COOKIE_SESSION) return { credentials: 'include' }
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {}
+}
 
 // ✅ Универсальный fetch с токеном
 export async function safeFetchJSON<T = unknown>(
@@ -6,7 +13,7 @@ export async function safeFetchJSON<T = unknown>(
   token?: string | null
 ): Promise<T> {
   const res = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    ...authOptions(token),
   })
 
   if (!res.ok) {
@@ -44,11 +51,7 @@ export async function getProfile(token: string | null) {
     return res.json()
   }
 
-  const res = await fetch('http://localhost:5000/profile', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  const res = await fetch('http://localhost:5000/profile', authOptions(token))
 
   if (!res.ok) throw new Error('Profile fetch failed')
   return res.json()
@@ -62,11 +65,7 @@ export async function getFriends(token: string | null) {
     return []
   }
 
-  const res = await fetch('http://localhost:5000/friends', {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  })
+  const res = await fetch('http://localhost:5000/friends', authOptions(token))
   if (!res.ok) throw new Error('Friends fetch failed')
   return res.json()
 }
@@ -97,10 +96,8 @@ export async function updateProfile(data: ProfileUpdate, token: string) {
 
   const res = await fetch(`${BASE_URL}/profile`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { 'Content-Type': 'application/json', ...((authOptions(token).headers as Record<string, string>) || {}) },
+    credentials: token === COOKIE_SESSION ? 'include' : undefined,
     body: JSON.stringify(data),
   })
 
@@ -126,11 +123,7 @@ export async function checkUsername(username: string, token: string) {
     return { taken: false }
   }
 
-  const res = await fetch(`${BASE_URL}/check-username?username=${username}`, {
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  })
+  const res = await fetch(`${BASE_URL}/check-username?username=${username}`, authOptions(token))
 
   if (!res.ok) {
     throw new Error(`❌ Username check failed: ${res.status}`)

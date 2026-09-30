@@ -1,11 +1,11 @@
 // server/auth/middleware.js
 const { verifyToken, extractToken } = require('./utils');
-const { MongoClient } = require('mongodb');
 
 const requireAuth = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    const token = extractToken(authHeader);
+    const cookieToken = req.cookies?.vibemap_token;
+    const token = cookieToken || extractToken(authHeader);
     
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });

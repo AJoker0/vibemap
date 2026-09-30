@@ -4,6 +4,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '@/context/AuthContext'
+import { authOptions } from '@/lib/api'
 
 type CountryStat = {
   country: string
@@ -43,9 +44,7 @@ export function GlobalVibesModal({ isOpen, onClose }: Props) {
       } else {
         // Для JWT пользователей
         response = await fetch('http://localhost:5000/global-vibes', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          ...authOptions(token),
         })
       }
       

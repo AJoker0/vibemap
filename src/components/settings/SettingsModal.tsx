@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import './settings-modal.css'
-import { getProfile, updateProfile } from '@/lib/api'
+import { authOptions, getProfile, updateProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 
@@ -43,6 +43,26 @@ export function SettingsModal({ onClose }: Props) {
     if (typeof window !== 'undefined') {
       window.location.href = '/auth'
     }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Delete your profile, visits and active vibes permanently?')) return
+
+    const isCookieSession = token === 'cookie-session'
+    const response = isCookieSession
+      ? await fetch('http://localhost:5000/account', {
+          method: 'DELETE',
+          credentials: 'include',
+        })
+      : await fetch('/api/account', { method: 'DELETE' })
+
+    if (!response.ok) {
+      setUsernameError('Could not delete the account. Please try again.')
+      return
+    }
+
+    await logout()
+    window.location.href = '/auth'
   }
 
   useEffect(() => {
@@ -114,11 +134,7 @@ export function SettingsModal({ onClose }: Props) {
         // Для JWT пользователей используем Express сервер
         res = await fetch(
           `http://localhost:5000/check-username?username=${username}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          authOptions(token)
         )
       }
       
@@ -288,6 +304,9 @@ export function SettingsModal({ onClose }: Props) {
 
           <button className="logout-btn" onClick={handleLogout} type="button">
             🚪 Logout
+          </button>
+          <button className="delete-account-btn" onClick={handleDeleteAccount} type="button">
+            Delete account and data
           </button>
         </div>
       </div>

@@ -2,27 +2,57 @@
 
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { z } = require('zod');
 const { MongoClient } = require('mongodb');
 const requireAuth = require('./auth/middleware');
+const { env } = require('./config');
 
 // Загружаем переменные окружения
-require('dotenv').config();
-
 const app = express();
-const port = process.env.PORT || 5000;
+const port = env.PORT;
 
-// ✅ CORS + JSON
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
-app.use(express.json({ limit: '8mb' }));
-
-// Отладочный middleware
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(cors({
+  origin(origin, callback) {
+    if (!origin || env.corsOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error('Origin is not allowed by CORS'));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '1mb' }));
+app.use(cookieParser());
 app.use((req, res, next) => {
-  console.log(`📥 ${new Date().toISOString()} - ${req.method} ${req.path}`);
+  res.setHeader('Cache-Control', 'no-store');
   next();
 });
 
+// Отладочный middleware
+app.use((req, res, next) => {
+  if (!req.path.startsWith('/health')) {
+    console.log(`${req.method} ${req.path}`);
+  }
+  next();
+});
+
+app.get('/health', (_req, res) => {
+  res.json({ ok: true, service: 'vibemap-api' });
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 30,
+  standardHeaders: 'draft-8',
+  legacyHeaders: false,
+  message: { error: 'Too many authentication attempts. Try again later.' },
+});
+
 // ✅ MongoDB connection
-const client = new MongoClient(process.env.MONGODB_URI || 'mongodb://localhost:27017/vibemap');
+const client = new MongoClient(env.MONGODB_URI);
 let db;
 
 client.connect().then(() => {
@@ -32,7 +62,7 @@ client.connect().then(() => {
   // ✅ Auth routes
   console.log('🔥 Registering auth routes...');
   const authRoutes = require('./auth/routes')(db);
-  app.use('/auth', authRoutes);
+  app.use('/auth', authLimiter, authRoutes);
   console.log('✅ Auth routes registered at /auth');
 
   // ✅ Тестовый роут
@@ -43,6 +73,24 @@ client.connect().then(() => {
   // ✅ Protected test route
   app.get('/private', requireAuth, (req, res) => {
     res.json({ message: 'Protected data', user: req.user });
+  });
+
+  app.delete('/account', requireAuth, async (req, res) => {
+    try {
+      const userIds = [req.user.id, req.user.email].filter(Boolean);
+      await Promise.all([
+        db.collection('users').deleteMany({ email: req.user.email }),
+        db.collection('profiles').deleteMany({ $or: [{ userId: { $in: userIds } }, { email: req.user.email }] }),
+        db.collection('visits').deleteMany({ $or: [{ userId: { $in: userIds } }, { userEmail: req.user.email }] }),
+        db.collection('activeVibes').deleteMany({ userId: { $in: userIds } }),
+        db.collection('friends').deleteMany({ $or: [{ fromUserId: { $in: userIds } }, { toUserId: { $in: userIds } }] }),
+      ]);
+      res.clearCookie('vibemap_token', { httpOnly: true, sameSite: 'lax', path: '/' });
+      res.json({ success: true });
+    } catch (err) {
+      console.error('Account deletion failed:', err);
+      res.status(500).json({ error: 'Failed to delete account' });
+    }
   });
 
   // ✅ Get profile
@@ -132,7 +180,18 @@ client.connect().then(() => {
   // ✅ Add visit
   app.post('/visits', requireAuth, async (req, res) => {
     try {
-      const visit = { ...req.body, userId: req.user.id };
+      const parsed = visitSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: 'Invalid visit data' });
+      const safeLat = privateCoordinate(parsed.data.lat);
+      const safeLng = privateCoordinate(parsed.data.lng);
+      const visit = {
+        ...parsed.data,
+        lat: safeLat,
+        lng: safeLng,
+        location: { type: 'Point', coordinates: [safeLng, safeLat] },
+        userId: req.user.id,
+        createdAt: new Date(),
+      };
       await db.collection('visits').insertOne(visit);
       res.status(201).json({ success: true });
     } catch (err) {
@@ -175,11 +234,11 @@ client.connect().then(() => {
   app.post('/active-vibe', requireAuth, async (req, res) => {
     try {
       const userId = req.user.id;
-      const { emoji, lat, lng, city, country } = req.body;
-      
-      if (!emoji || !lat || !lng || !city || !country) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
+      const parsed = activeVibeSchema.safeParse(req.body);
+      if (!parsed.success) return res.status(400).json({ error: 'Invalid active vibe data' });
+      const { emoji, lat, lng, city, country } = parsed.data;
+      const safeLat = privateCoordinate(lat);
+      const safeLng = privateCoordinate(lng);
       
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000); // +24 часа
@@ -187,8 +246,9 @@ client.connect().then(() => {
       const activeVibe = {
         userId,
         emoji,
-        lat,
-        lng,
+        lat: safeLat,
+        lng: safeLng,
+        location: { type: 'Point', coordinates: [safeLng, safeLat] },
         city,
         country,
         createdAt: now,
@@ -348,3 +408,19 @@ client.connect().then(() => {
   console.error('❌ MongoDB connection failed:', err);
   process.exit(1);
 });
+
+const visitSchema = z.object({
+  lat: z.number().finite().min(-90).max(90),
+  lng: z.number().finite().min(-180).max(180),
+  city: z.string().trim().min(1).max(120),
+  emoji: z.string().trim().min(1).max(8),
+  timestamp: z.string().optional(),
+});
+const activeVibeSchema = z.object({
+  emoji: z.string().trim().min(1).max(8),
+  lat: z.number().finite().min(-90).max(90),
+  lng: z.number().finite().min(-180).max(180),
+  city: z.string().trim().min(1).max(120),
+  country: z.string().trim().min(1).max(120),
+});
+const privateCoordinate = (value) => Math.round(value * 1000) / 1000;

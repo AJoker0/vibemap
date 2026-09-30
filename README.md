@@ -1,131 +1,76 @@
-
 # VibeMap
 
-Social mood mapping with Next.js, Leaflet, Express, JWT/NextAuth and MongoDB.
+VibeMap is a privacy-minded social mood map. People leave a short-lived emotional signal at a place, see the atmosphere around them, and build a personal memory trail without turning the product into a permanent location tracker.
 
-This repository is configured for local development with one command.
----
+> Current status: local-first MVP hardening for a small private beta.
 
-## 🔥 TL;DR
+## Product loop
 
-**Vibemap** is a fullstack Next.js web app combining **live geolocation**, **emoji mood sharing**, and **social exploration** on a dynamic Leaflet map.
-Powered by **React**, **MongoDB**, **JWT auth**, **Docker**, and **Supercluster**, it's your geo-aware social dashboard.
+1. Open the map and choose a mood.
+2. Share an approximate location for a 24-hour vibe.
+3. Explore your own places, friends, and the public global pulse.
+4. Return to build a personal mood memory trail.
 
----
+The first release is intentionally focused on this loop. Challenges, AI recommendations, music integrations, and realtime infrastructure belong in [ROADMAP.md](ROADMAP.md), not in the MVP promise.
 
-## 🛠️ TECH STACK OVERVIEW
+## Current stack
 
-| Layer         | Tech Stack                              |
-| ------------- | --------------------------------------- |
-| 🧠 Frontend   | Next.js (App Router), React, TypeScript |
-| 🗺 Maps       | Leaflet, React-Leaflet, Supercluster    |
-| 🎨 UI/UX      | CSS Modules + Modals                    |
-| 📡 Backend    | Express.js (REST API)                   |
-| 🔐 Auth       | JWT + Custom AuthContext                |
-| 🧱 DB         | MongoDB (via Docker container)          |
-| 🐳 Container  | Docker (MongoDB only)                   |
-| 📦 PackageMgr | PNPM                                    |
+- Next.js 15 App Router and TypeScript
+- React 18, React-Leaflet, Leaflet and Supercluster
+- Express REST API for legacy JWT endpoints
+- NextAuth Google OAuth
+- MongoDB with Docker Compose
+- pnpm as the only package manager
+- ESLint 9 flat config and TypeScript strict mode
 
----
+## Project layout
 
-## 🚀 FEATURES SNAPSHOT
-
-* 📍 **Live Geolocation** using `navigator.geolocation`
-* 🎭 **Mood Picker**: Drop emoji over your current position
-* 🗺️ **Clustering** with `Supercluster` for map performance
-* 🧑‍🤝‍🧑 **Friend System**: List, mutuals, and visits
-* 🌆 **Visited Cities Tracker**
-* ⚙️ **Settings Modal**: Username, notifications, birthday
-* 👤 **Profile Modal**: Top cities, avatar, friends
-* 🌐 **Map Styles**: Toggle standard, satellite, dark, light, relief
-* 🔐 **JWT Auth**: Login, register, persist via `localStorage`
-
----
-
-## Project Structure
-
-```
-vibemap/
-├── src/app/                 # Next.js App Router pages and API routes
-├── src/components/          # UI, auth, profile and map components
-├── src/context/             # Client authentication state
-├── src/lib/                 # API clients, MongoDB and NextAuth setup
-├── src/styles/              # Global and component styles
-├── server/                  # Express JWT API
-├── scripts/                 # Database and maintenance utilities
-├── public/                  # Static assets
-├── docker-compose.yml       # Local MongoDB service
-└── package.json             # Commands and dependencies
+```text
+src/app/                 Next.js routes and API handlers
+src/components/          Map, auth, profile and UI components
+src/context/              Client auth state
+src/lib/                  MongoDB, API and auth helpers
+server/                   Express API and auth compatibility layer
+scripts/                  Database maintenance utilities
+public/                   Static assets
+docker-compose.yml        Local MongoDB
+docs/                     Product and architecture notes
 ```
 
----
+## Local development
 
-## 🧱 DATABASE STRUCTURE (MongoDB)
+### Requirements
 
-Collections:
+- Node.js 20+
+- pnpm
+- Docker Desktop
 
-* `users`: `{ email, passwordHash }`
-* `profiles`: `{ avatar, birthday, username, notifications }`
-* `visits`: `{ lat, lng, city, timestamp, emoji, userId }`
-* `friends`: `[{ fromUserId, toUserId, mutual }]`
-// f*ck Antonio
----
-
-## 🔒 AUTH FLOW
-
-1. On **register/login**, receive JWT from backend:
-
-   ```ts
-   localStorage.setItem('authToken', token);
-   ```
-2. Wrapped in `AuthContext`, validated with:
-
-   ```ts
-   fetch('/profile', { headers: { Authorization: `Bearer ${token}` } });
-   ```
-3. Fallbacks and logout are managed inside `AuthProvider`.
-
----
-
-## 🧨 KNOWN ISSUES / WORK LEFT
-
-| Issue                               | Status                                            | Fix Plan                               |
-| ----------------------------------- | ------------------------------------------------- | -------------------------------------- |
-| Profile data not visible in Compass | ⚠️ Not Indexed                                    | Ensure `profiles` DB inserts           |
-| Login "invalid password"            | ⚠️ Likely bcrypt missing or hash logic not called | Check `/auth/login` backend controller |
-| Tokens not stored/parsed properly   | ⚠️                                                | Validate JWT secret consistency        |
-| No file `models/User.js` found      | ⚠️                                                | Create Mongoose schema manually        |
-| Copilot unreliable                  | ✅ Fixed — use Jake instead                        | 😎                                     |
-
----
-
-## Run Locally
-
-### Prerequisites
-
-Install Node.js 20+, pnpm and Docker Desktop. Docker Desktop must be running.
-
-Install dependencies once:
+Install dependencies and start the full local stack:
 
 ```sh
 pnpm install
-```
-
-Copy `.env.example` to `.env.local` and fill OAuth values if Google login is needed. Local development uses `mongodb://localhost:27017/vibemap`; MongoDB data is stored in `mongo-data/` and is not removed by the scripts.
-
-To intentionally use another MongoDB instance for development, set `VIBEMAP_MONGODB_URI` before running `pnpm dev`.
-
-Start the full local stack with one command:
-
-```sh
 pnpm dev
 ```
 
-This starts MongoDB, the Express API and Next.js. Open [http://localhost:3000](http://localhost:3000).
+The command starts MongoDB, the Express compatibility API and Next.js.
 
-Stop MongoDB after development with `pnpm stop:all`. The terminal running `pnpm dev` can be stopped with `Ctrl+C`.
+- App: http://localhost:3000
+- Express health: http://localhost:5000/health
+- Express test: http://localhost:5000/test
 
-Useful checks:
+Stop the database container with:
+
+```sh
+pnpm stop:all
+```
+
+Prepare MongoDB indexes and TTL cleanup:
+
+```sh
+pnpm db:indexes
+```
+
+Run project checks:
 
 ```sh
 pnpm typecheck
@@ -133,273 +78,59 @@ pnpm lint
 pnpm build
 ```
 
----
+Do not run `pnpm build` and `pnpm dev` in the same old terminal session. They now use separate Next.js output directories, but restarting the dev server after a config change is still recommended.
 
-## 🗂️ API ENDPOINTS (Backend)
+## Environment
 
-| Route             | Method   | Auth? | Description                 |
-| ----------------- | -------- | ----- | --------------------------- |
-| `/auth/register`  | POST     | ❌     | Creates user + JWT          |
-| `/auth/login`     | POST     | ❌     | Verifies login              |
-| `/profile`        | GET/PUT  | ✅     | Load or update profile      |
-| `/visits`         | GET/POST | ✅     | Get/post city emoji visits  |
-| `/friends`        | GET      | ✅     | Returns friend list         |
-| `/check-username` | GET      | ✅     | Checks if username is taken |
+Copy `.env.example` to `.env.local`. Never commit `.env.local` or real OAuth credentials.
 
----
+Important variables:
 
-## 📌 TIPS FOR FUTURE YOU
+- `MONGODB_URI`
+- `JWT_SECRET` with at least 32 random characters
+- `NEXTAUTH_SECRET`
+- `NEXTAUTH_URL`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `CORS_ORIGINS`
 
-* 🧠 If **map doesn’t load** — check browser location permissions
-* 🔐 If **token fails** — clear `localStorage` and re-login
-* 👤 If **profile missing** — check if `/profile` PUT was ever triggered
-* 📦 If **Copilot crashes** — use Jake 💪
+For a deployed app, use a managed MongoDB deployment, HTTPS, a real domain, a production OAuth callback URL, and a secrets manager.
 
----
+## Security baseline
 
-## ✨ ROADMAP
+- Passwords are hashed with bcrypt and new records use `passwordHash`.
+- Plaintext password fallback is disabled.
+- JWT secrets are loaded from environment variables; there is no hardcoded production fallback.
+- Express uses Helmet, strict CORS allow-listing, JSON body limits, rate limiting on auth routes, and Zod input validation.
+- New auth responses set an HttpOnly, SameSite cookie.
+- Visit and active-vibe coordinates are validated, rounded to approximate neighbourhood precision, and stored as GeoJSON Points.
+- MongoDB indexes include unique email/username indexes, `2dsphere` indexes and an `activeVibes.expiresAt` TTL index.
 
-* [ ] Add `bcrypt` to hash passwords (`bcrypt.compare()` in login logic)
-* [ ] Add avatar uploads via file input
-* [ ] Migrate auth + DB logic to Prisma?
-* [ ] Add WebSocket live updates?
-* [ ] Deploy via Vercel + Atlas combo
+This is a security baseline, not a legal guarantee. Before public launch, complete a privacy review, account deletion flow, consent UX, age policy, incident plan, dependency audit and external penetration test.
 
----
+## Privacy product rules
 
-## 🤝 CONTRIBUTORS
+- Exact location is not a public product default.
+- Active vibes expire after 24 hours.
+- A future public release must include Ghost Mode, audience controls, clear geolocation consent, data export/deletion, and a privacy policy before opening access broadly.
 
-* 🧑‍🚀 **You** — Primary Dev, Project Architect
-* 👾 **Jake (aka code)** — Hack-assistant & AI warrior
+## API surface
 
----
+| Area | Routes | Purpose |
+| --- | --- | --- |
+| Auth | `/auth/register`, `/auth/login`, `/auth/google` | Compatibility email/password and Google JWT flow |
+| Profile | `/api/profile`, `/profile` | Profile read/update |
+| Vibes | `/api/active-vibe`, `/active-vibe` | 24-hour mood signal |
+| Visits | `/api/visits`, `/visits` | Personal mood memories |
+| Discovery | `/api/global-vibes`, `/global-vibes` | Aggregated public pulse |
+| Health | `/health`, `/test` | Runtime checks |
 
-## 🧬 FINAL WORD
+The app currently has both NextAuth and an Express compatibility layer because existing accounts and API consumers need a migration path. New product work should target NextAuth/session-based server routes; the Express JWT path should be retired after account migration and client cleanup.
 
-> You made a real-time map-based social platform from scratch. Be proud.
-> When you come back — you're not starting from zero, you're picking up where a **vibe architect** left off.
-> Stay sharp. Stay logged in. Stay vibin'.
+## Deployment direction
 
----
+The first controlled beta can use Vercel for Next.js and MongoDB Atlas for data. The Express compatibility service must be deployed separately or removed after migration. Configure HTTPS, production CORS origins, OAuth callback URLs, monitoring, backups, rate limits and a rollback procedure before inviting external users.
 
-# 🔥 `git push && go dominate that internship 🧑‍💼`
-<img width="960" height="1280" alt="зображення" src="https://github.com/user-attachments/assets/5357ace0-c52e-4a40-8836-f08aabcc4ec0" />
+## License and status
 
-
-Принято.
-**Проект: VIBE MAP v1.0**
-Режим: 🧱 *Шаг за шагом. От нуля — к продакшену.*
-
----
-
-### 🔧 **Общий подход**
-
-Мы пойдём **по дорожной карте из ТЗ**, но добавим больше низкоуровневых шагов.
-Каждая неделя = логически завершённый блок.
-**Каждый блок разбит на этапы**:
-
-1. Архитектура и окружение
-2. Код и реализация
-3. Тесты
-4. Документация
-5. CI/CD для автоматизации
-
----
-
-## 🧭 **🔥 Полный План Разработки VIBE MAP**
-
----
-
-### ✅ **НЕДЕЛЯ 1: Инициализация проекта + UI Kit**
-
-#### 1.1 Репозиторий + DevOps база
-
-* [ ] `git init`, создать GitHub репозиторий
-* [ ] Настроить `pnpm`, `.nvmrc`, `.editorconfig`
-* [ ] ESLint, Prettier, TypeScript конфиг
-* [ ] GitHub Actions: CI на `pnpm lint`, `pnpm typecheck`, `pnpm test`
-
-#### 1.2 Настроить Frontend
-
-* [ ] `npx create-next-app@latest` (App Router, Tailwind, TypeScript)
-* [ ] Удалить boilerplate, создать структуру `/app`, `/components`, `/lib`
-
-#### 1.3 Storybook + UI Kit
-
-* [ ] Установить Storybook (`@storybook/nextjs`)
-* [ ] Создать `Button`, `Card`, `ThemeToggle`, `EmojiPicker`
-* [ ] Настроить темизацию через `daisyUI`, Tailwind config
-
----
-
-### ✅ **НЕДЕЛЯ 2: Карта (F2 – Map Engine MVP)**
-
-#### 2.1 Mapbox
-
-* [ ] Подключить Mapbox GL JS
-* [ ] Добавить карту в `/map/page.tsx`, центр и зум
-
-#### 2.2 Marker & Clustering
-
-* [ ] Кастомные маркеры с emoji-sprite
-* [ ] Реализовать кластеризацию (supercluster или Mapbox built-in)
-* [ ] Анимации (Framer Motion) при появлении точки
-
----
-
-### ✅ **НЕДЕЛЯ 3: Аутентификация (F3)**
-
-* [ ] Установить и настроить NextAuth.js
-* [ ] Подключить GitHub и Google провайдеры
-* [ ] Аноним + deviceId — fallback стратегия (сохраняем в localStorage)
-* [ ] Создать `auth-slice` в Redux Toolkit
-
----
-
-### ✅ **НЕДЕЛЯ 4: API — Vibe CRUD (F4)**
-
-#### 4.1 Backend Scaffold
-
-* [ ] Express + Zod + CORS + Helmet
-* [ ] Подключение MongoDB Atlas, схема `vibes`, `users`, `reports`
-* [ ] Валидация входных данных Zod
-* [ ] Эндпоинты:
-
-  * `POST /vibes`
-  * `GET /feeds?bbox&since`
-  * `PUT /vibes/:id/like`
-  * `POST /report`
-
-#### 4.2 Тесты
-
-* [ ] Unit-тесты (Vitest)
-* [ ] Документация через Swagger (OpenAPI 3.1)
-
----
-
-### ✅ **НЕДЕЛЯ 5: Realtime Socket Layer (F5)**
-
-* [ ] Socket.io + Redis pub/sub
-* [ ] Комната на основе `bbox`
-* [ ] Ограничение по частоте (throttled emit)
-* [ ] Интеграция с frontend (socket.io-client, React Query sync)
-
----
-
-### ✅ **НЕДЕЛЯ 6: Time-lapse View (F6)**
-
-* [ ] Добавить Canvas/WebGL слой над Mapbox
-* [ ] Реализовать таймлайн + слайдер
-* [ ] Анимация изменений "температуры эмоций"
-
----
-
-### ✅ **НЕДЕЛЯ 7: Admin Dashboard (F7)**
-
-* [ ] `/admin` с ролевым доступом через JWT
-* [ ] Модерация: блокировка, удаление, бан
-* [ ] Статистика и отчёты (по числу лайков, жалоб и т.д.)
-
----
-
-### ✅ **НЕДЕЛЯ 8: SEO / OG / Легкость (F8)**
-
-* [ ] SSR-рендер основных страниц
-* [ ] OG-карточки — серверный рендер через Playwright screenshot
-* [ ] Lighthouse → 90+ для mobile/desktop
-
----
-
-### ✅ **НЕДЕЛЯ 9: Мониторинг + Выкатка (F9-F10)**
-
-* [ ] CI: ESLint, Typecheck, Prettier, Unit, Cypress
-* [ ] Docker Compose (Node, Mongo, Redis, Caddy)
-* [ ] GitHub Actions (build → push → deploy)
-* [ ] Деплой: Vercel (frontend), Railway/Render (backend + DB)
-* [ ] Логирование: Winston → Grafana + Loki
-* [ ] Uptime мониторинг: Uptime Kuma
-
----
-
-## 📁 Структура проекта (вырезка)
-
-```
-/app
-  /map/page.tsx
-  /vibe/[id]/page.tsx
-  /admin/page.tsx
-  /api/geo/route.ts
-
-/components
-  Button.tsx
-  Modal.tsx
-  EmojiPicker.tsx
-  ThemeToggle.tsx
-
-/lib
-  auth.ts
-  map.ts
-  socket.ts
-
-/server
-  /controllers
-  /services
-  /routes
-  /models
-  index.ts
-
-/types
-  vibe.ts
-  user.ts
-```
-
----
-
-## ⏳ Прогресс-трекер
-
-| Неделя | Модуль          | Статус |
-| ------ | --------------- | ------ |
-| 1      | Init + UI       | ⬜      |
-| 2      | Map Engine      | ⬜      |
-| 3      | Auth            | ⬜      |
-| 4      | Vibe API        | ⬜      |
-| 5      | Realtime        | ⬜      |
-| 6      | Timeline        | ⬜      |
-| 7      | Admin           | ⬜      |
-| 8      | SEO / Share     | ⬜      |
-| 9      | CI / Мониторинг | ⬜      |
-
----
-
-Готов начать с **НЕДЕЛИ 1**?
-Если да — скажи "Стартую неделю 1", и я сразу сгенерирую тебе **первые шаги + код и конфиги**.
-
-🎯 Социальные фичи
-Друзья на карте - показывать где сейчас твои друзья и их последние вайбы
-Групповые челленджи - "кто больше городов посетит за месяц"
-Комментарии к вайбам - возможность оставлять заметки к каждому месту
-Шеринг вайбов - делиться своими моментами в соцсетях
-🗺️ Карта и локации
-Heatmap эмоций - показывать "горячие зоны" хорошего настроения в городе
-Маршруты путешествий - строить линии между посещенными местами
-Популярные места - рейтинг самых "вайбовых" мест в городе
-Nearby vibes - уведомления когда рядом кто-то отметил крутой вайб
-📊 Аналитика и геймификация
-Мудборд статистика - графики настроения по времени/дням/сезонам
-Достижения - "Первое посещение", "Исследователь", "Мастер настроения"
-Стрики - серии дней подряд с отметками
-Уровни - система прокачки за активность
-🎨 Персонализация
-Кастомные эмодзи - загружать свои иконки настроения
-Темы карты - темная/светлая/цветная
-Музыка к местам - привязывать треки к локациям через Spotify
-Фото к вайбам - добавлять картинки к отметкам
-🤖 AI и рекомендации
-Предложения мест - "тебе может понравиться это кафе"
-Анализ паттернов - "ты чаще грустишь по понедельникам"
-Напоминания - "давно не отмечал вайб, как дела?"
-🌟 Самые крутые идеи:
-Time Travel - посмотреть как менялось твое настроение в одном месте за год
-Vibe Weather - показывать "эмоциональную погоду" района
-Memory Lane - автоматические воспоминания "год назад ты был тут"
-Mood Sync - синхронизация с умными часами/фитнес-трекерами
+This repository is an actively developed private-beta project. Add a license and public contribution policy before open-sourcing it.
