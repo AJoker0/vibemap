@@ -3,12 +3,22 @@ import js from '@eslint/js'
 import tseslint from 'typescript-eslint'
 import prettier from 'eslint-config-prettier'
 import nextPlugin from '@next/eslint-plugin-next'
+import globals from 'globals'
 
 /** @type {import('eslint').Linter.FlatConfig[]} */
 export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        ...globals.node,
+      },
+    },
+    plugins: {
+      '@next/next': nextPlugin,
+    },
     rules: {
       // Мягкие предупреждения, не блокируют разработку
       '@typescript-eslint/no-unused-vars': 'warn',
@@ -39,6 +49,13 @@ export default [
     },
   },
   {
+    files: ['**/*.js', '**/*.mjs'],
+    rules: {
+      // Сервер и служебные скрипты используют CommonJS.
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
     files: ['**/*.ts', '**/*.tsx'],
     languageOptions: {
       parser: tseslint.parser,
@@ -60,7 +77,6 @@ export default [
     plugins: {
       prettier: (await import('eslint-plugin-prettier')).default,
       '@typescript-eslint': (await import('@typescript-eslint/eslint-plugin')).default,
-      '@next/next': nextPlugin,
     },
   },
   prettier,
@@ -68,6 +84,7 @@ export default [
     // Заменяет устаревший .eslintignore
     ignores: [
       'node_modules/**',
+      '.storybook/**',
       'dist/**',
       'build/**',
       '.next/**',
@@ -77,6 +94,7 @@ export default [
       'mongo-data/**',
       'log/**',
       'data/**',
+      'scripts/create_indexes.js',
     ],
   },
 ]

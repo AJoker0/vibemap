@@ -1,3 +1,7 @@
+.google-btn-wrap {
+  width: 100%;
+}
+
 .google-btn {
   display: flex;
   align-items: center;
@@ -16,6 +20,12 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   position: relative;
   overflow: hidden;
+  appearance: none;
+}
+
+.google-btn:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .google-btn::before {
@@ -57,4 +67,12 @@
   color: #1f2937;
   font-weight: 600;
   z-index: 1;
+}
+
+.google-error {
+  margin: 8px 0 0;
+  color: #a33f2f;
+  font-size: 0.74rem;
+  line-height: 1.4;
+  text-align: center;
 }

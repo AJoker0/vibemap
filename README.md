@@ -1,9 +1,9 @@
 
-# 🌍 VIBEMAP — **Real-time Mood Mapping Platform**
+# VibeMap
 
-> Social vibes meet interactive maps. Drop your emotion, discover your friends, visualize your world.
+Social mood mapping with Next.js, Leaflet, Express, JWT/NextAuth and MongoDB.
 
-Made by student, for students
+This repository is configured for local development with one command.
 ---
 
 ## 🔥 TL;DR
@@ -42,35 +42,20 @@ Powered by **React**, **MongoDB**, **JWT auth**, **Docker**, and **Supercluster*
 
 ---
 
-## 🧪 PROJECT STRUCTURE
+## Project Structure
 
 ```
 vibemap/
-├── docker-compose.yml       # (optional)
-├── Dockerfile               # if extending Docker
-├── .env                     # local variables (token secret, etc.)
-├── package.json             # PNPM/Next config
-├── prisma/                  # (if you switch to Prisma later)
-├── public/                  # images, static assets
-├── src/
-│   ├── app/
-│   │   ├── page.tsx         # Main Leaflet page
-│   │   ├── login/           # Login UI
-│   │   └── register/        # Register UI
-│   ├── components/
-│   │   ├── map/             # Map, Markers, Emoji Picker
-│   │   ├── auth/            # LoginModal, RegisterModal
-│   │   ├── profile/         # ProfileModal
-│   │   └── settings/        # SettingsModal
-│   ├── context/
-│   │   └── AuthContext.tsx  # Custom JWT + token logic
-│   ├── lib/
-│   │   └── api.ts           # All fetch + auth utils
-│   └── styles/              # CSS modules
-└── server/                  # Express backend
-    ├── routes/              # /auth, /profile, /visits
-    ├── middleware/          # JWT check
-    └── index.js             # Entry point
+├── src/app/                 # Next.js App Router pages and API routes
+├── src/components/          # UI, auth, profile and map components
+├── src/context/             # Client authentication state
+├── src/lib/                 # API clients, MongoDB and NextAuth setup
+├── src/styles/              # Global and component styles
+├── server/                  # Express JWT API
+├── scripts/                 # Database and maintenance utilities
+├── public/                  # Static assets
+├── docker-compose.yml       # Local MongoDB service
+└── package.json             # Commands and dependencies
 ```
 
 ---
@@ -114,52 +99,39 @@ Collections:
 
 ---
 
-## 🧑‍💻 HOW TO RUN LOCALLY
+## Run Locally
 
-### 🔧 1. MongoDB with Docker
+### Prerequisites
 
-```bash
-docker run -d --name vibemap-mongo -p 27017:27017 mongo
+Install Node.js 20+, pnpm and Docker Desktop. Docker Desktop must be running.
+
+Install dependencies once:
+
+```sh
+pnpm install
 ```
 
-### 🔧 2. Backend (Express)
+Copy `.env.example` to `.env.local` and fill OAuth values if Google login is needed. Local development uses `mongodb://localhost:27017/vibemap`; MongoDB data is stored in `mongo-data/` and is not removed by the scripts.
 
-```bash
-cd server
-pnpm install
+To intentionally use another MongoDB instance for development, set `VIBEMAP_MONGODB_URI` before running `pnpm dev`.
+
+Start the full local stack with one command:
+
+```sh
 pnpm dev
 ```
 
-### 🔧 3. Frontend (Next.js)
+This starts MongoDB, the Express API and Next.js. Open [http://localhost:3000](http://localhost:3000).
 
-```bash
-cd vibemap
-pnpm install
-pnpm dev
+Stop MongoDB after development with `pnpm stop:all`. The terminal running `pnpm dev` can be stopped with `Ctrl+C`.
+
+Useful checks:
+
+```sh
+pnpm typecheck
+pnpm lint
+pnpm build
 ```
-
-### 🔧 4. dev:all
-
-```bash
-pnpm dev:all
-```
-### 🔧 5. Dev start!
-```bash
-# Запуск полной системы активных вайбов
-pnpm dev:vibes
-
-# Остановка всего
-pnpm stop:all
-
-# Полная перезагрузка
-pnpm dev:clean
-```
-
-Open frontend:
-📡 [http://localhost:3000](http://localhost:3000)
-
-Open backend (API):
-🧠 [http://localhost:5000](http://localhost:5000)
 
 ---
 

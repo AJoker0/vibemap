@@ -28,11 +28,6 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
     }
   }
 
-  const handleGoogleLogin = () => {
-    console.log('🎯 Google login clicked - using NextAuth')
-    // NextAuth обработает все сам
-  }
-
   return (
     <div className="modal-backdrop">
       <div className="modal">
@@ -70,7 +65,7 @@ export default function LoginModal({ onClose }: { onClose: () => void }) {
         </div>
 
         <div className="flex justify-center">
-          <GoogleLoginButton onLogin={handleGoogleLogin} />
+          <GoogleLoginButton />
         </div>
 
         <div className="mt-6 text-center">

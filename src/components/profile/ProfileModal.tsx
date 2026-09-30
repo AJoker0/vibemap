@@ -4,7 +4,6 @@
 
 import { useEffect, useState } from 'react'
 import './profile-modal.css'
-import { getProfile } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import Image from 'next/image'
 
@@ -32,17 +31,16 @@ type Props = {
   onClose: () => void
   friends: Friend[]
   cities: City[]
-  onRefresh?: () => void // 🔄 Колбэк для уведомления о необходимости обновления
 }
 
-export function ProfileModal({ onClose, friends, cities, onRefresh }: Props) {
+export function ProfileModal({ onClose, friends, cities }: Props) {
   const [avatar, setAvatar] = useState('/user.png')
   const [name, setName] = useState('Loading...')
   const [activeTab, setActiveTab] = useState<'friends' | 'cities'>('friends')
   const [showSaved, setShowSaved] = useState(false)
   const [topCity, setTopCity] = useState<City | null>(null)
 
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   // 🔄 Функция для загрузки/обновления визитов
   const fetchVisits = async () => {
@@ -95,9 +93,8 @@ export function ProfileModal({ onClose, friends, cities, onRefresh }: Props) {
       if (!token) return // 🛑 Без токена не выходим в сеть
 
       try {
-        const profile = await getProfile(token)
-        setName(profile.name)
-        setAvatar(profile.avatar)
+        setName(user?.name || 'Vibe explorer')
+        setAvatar(user?.avatar || '/user.png')
 
         // Загружаем и обновляем визиты
         const visits = await fetchVisits()
@@ -110,7 +107,7 @@ export function ProfileModal({ onClose, friends, cities, onRefresh }: Props) {
     if (token) {
       fetchProfile()
     }
-  }, [token]) // 🔁 запускается только когда token будет готов
+  }, [token, user])
 
   // 🔄 Функция для обновления данных извне
   const refreshData = async () => {

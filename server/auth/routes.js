@@ -13,14 +13,14 @@ module.exports = (db) => {
 
   router.use((req, res, next) => {
     console.log(`📥 Auth request: ${req.method} ${req.path}`);
-    console.log('📦 Request body:', req.body);
     next();
   });
 
   // 🔐 Login - ОБНОВЛЕННАЯ ВЕРСИЯ С ОТЛАДКОЙ
   router.post('/login', async (req, res) => {
     console.log('🔐 Login with email + password');
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
@@ -86,10 +86,15 @@ if (!isMatch && user.password !== password) {
   // 📝 Register
   router.post('/register', async (req, res) => {
     console.log('📝 Register with email + password');
-    const { email, password } = req.body;
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const password = String(req.body.password || '');
 
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters' });
     }
 
     if (!isValidEmail(email)) {

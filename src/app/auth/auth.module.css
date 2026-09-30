@@ -1,0 +1,383 @@
+.authPage {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(390px, 0.72fr);
+  min-height: 100vh;
+  overflow: hidden;
+  color: #f4f1ea;
+  background: #0c1b2a;
+}
+
+.atlas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  padding: clamp(28px, 5vw, 72px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 10% 92%, rgba(255, 117, 91, 0.17), transparent 30%),
+    radial-gradient(circle at 84% 12%, rgba(32, 197, 173, 0.17), transparent 32%),
+    #102638;
+}
+
+.atlas::before,
+.atlas::after {
+  position: absolute;
+  content: '';
+  pointer-events: none;
+}
+
+.atlas::before {
+  inset: 0;
+  opacity: 0.22;
+  background-image: linear-gradient(rgba(240, 245, 242, 0.14) 1px, transparent 1px), linear-gradient(90deg, rgba(240, 245, 242, 0.14) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: linear-gradient(to bottom, black, transparent 88%);
+}
+
+.atlas::after {
+  top: -120px;
+  right: -80px;
+  width: 330px;
+  height: 330px;
+  border: 1px solid rgba(244, 241, 234, 0.18);
+  border-radius: 50%;
+  box-shadow: 0 0 0 35px rgba(244, 241, 234, 0.03), 0 0 0 82px rgba(244, 241, 234, 0.025);
+}
+
+.atlasTopline,
+.atlasFooter {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+}
+
+.atlasTopline {
+  gap: 10px;
+}
+
+.brandMark {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  color: #0c1b2a;
+  background: #20c5ad;
+  border-radius: 10px;
+}
+
+.brandName {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.liveTag {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  color: #8de7d6;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+}
+
+.liveTag i {
+  width: 7px;
+  height: 7px;
+  background: #20c5ad;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(32, 197, 173, 0.14);
+}
+
+.atlasCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 610px;
+  margin-top: clamp(72px, 12vh, 140px);
+}
+
+.eyebrow,
+.panelKicker {
+  margin: 0 0 16px;
+  color: #ff9d89;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.atlasCopy h1 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(3rem, 5.8vw, 6.3rem);
+  font-weight: 600;
+  letter-spacing: -0.07em;
+  line-height: 0.94;
+}
+
+.atlasCopy h1 em {
+  color: #20c5ad;
+  font-style: normal;
+}
+
+.description {
+  max-width: 470px;
+  margin: 24px 0 0;
+  color: #a6bac1;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
+  line-height: 1.6;
+}
+
+.mapSketch {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 600px);
+  height: clamp(200px, 26vh, 280px);
+  margin: auto 0 35px;
+}
+
+.contour {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(32, 197, 173, 0.42);
+  border-radius: 47% 53% 59% 41% / 44% 39% 61% 56%;
+  transform: rotate(-17deg);
+}
+
+.contourOne { top: 7%; left: 5%; width: 72%; height: 82%; }
+.contourTwo { top: 18%; left: 18%; width: 58%; height: 66%; border-color: rgba(255, 117, 91, 0.45); }
+.contourThree { top: 31%; left: 31%; width: 36%; height: 42%; }
+
+.routeLine {
+  position: absolute;
+  top: 12%;
+  left: 17%;
+  width: 52%;
+  height: 76%;
+  border-right: 2px dashed rgba(244, 241, 234, 0.42);
+  border-bottom: 2px dashed rgba(244, 241, 234, 0.42);
+  border-radius: 0 0 55% 0;
+  transform: rotate(25deg);
+}
+
+.moodPin {
+  position: absolute;
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  color: #b8cad0;
+  font-size: 0.65rem;
+  white-space: nowrap;
+}
+
+.moodPin b {
+  display: grid;
+  width: 37px;
+  height: 37px;
+  place-items: center;
+  background: #19364a;
+  border: 1px solid rgba(244, 241, 234, 0.22);
+  border-radius: 50% 50% 50% 9px;
+  box-shadow: 0 9px 20px rgba(0, 0, 0, 0.22);
+  font-size: 1.15rem;
+  transform: rotate(-45deg);
+}
+
+.moodPin b::first-letter { transform: rotate(45deg); }
+.moodPin small { font-size: inherit; }
+.pinOne { top: 5%; left: 0; }
+.pinTwo { top: 42%; left: 43%; }
+.pinThree { right: 3%; top: 8%; }
+.pinFour { right: 18%; bottom: 2%; }
+
+.youAreHere {
+  position: absolute;
+  right: 27%;
+  bottom: 28%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #f4f1ea;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
+
+.youAreHere i {
+  width: 8px;
+  height: 8px;
+  background: #ff755b;
+  border: 2px solid #f4f1ea;
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(255, 117, 91, 0.2);
+}
+
+.atlasFooter {
+  z-index: 1;
+  justify-content: space-between;
+  max-width: 600px;
+  padding-top: 18px;
+  color: #718d98;
+  font-size: 0.7rem;
+  border-top: 1px solid rgba(244, 241, 234, 0.13);
+}
+
+.atlasFooter span:first-child { display: flex; align-items: center; gap: 7px; color: #9bb5bb; }
+
+.authPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+  max-width: 520px;
+  padding: clamp(34px, 7vw, 92px);
+  color: #0c1b2a;
+  background: #f4f1ea;
+}
+
+.authPanel h2 {
+  margin: 0;
+  color: #0c1b2a;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: clamp(2rem, 3vw, 3.1rem);
+  font-weight: 600;
+  letter-spacing: -0.06em;
+  line-height: 0.98;
+}
+
+.panelIntro {
+  max-width: 320px;
+  margin: 13px 0 32px;
+  color: #71808a;
+  line-height: 1.55;
+}
+
+.form {
+  display: grid;
+  gap: 17px;
+}
+
+.form label {
+  display: grid;
+  gap: 8px;
+  color: #4d5c63;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 13px;
+  background: #fffdf9;
+  border: 1px solid #d7d9d2;
+  border-radius: 10px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.inputWrap:focus-within {
+  border-color: #20aa99;
+  box-shadow: 0 0 0 4px rgba(32, 197, 173, 0.13);
+}
+
+.inputWrap svg { flex: 0 0 auto; color: #82939a; }
+
+.inputWrap input {
+  width: 100%;
+  min-height: 50px;
+  padding: 0;
+  color: #0c1b2a;
+  font-size: 0.92rem;
+  background: transparent;
+  border: 0;
+  outline: 0;
+}
+
+.inputWrap input::placeholder { color: #a4adae; }
+
+.error {
+  padding: 11px 13px;
+  margin: -2px 0 0;
+  color: #a33f2f;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  background: #fff0ec;
+  border: 1px solid #f1c0b6;
+  border-radius: 9px;
+}
+
+.primaryAction {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 16px 0 18px;
+  margin-top: 4px;
+  color: #fffdf9;
+  font-size: 0.88rem;
+  font-weight: 700;
+  background: #0c1b2a;
+  border: 0;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.primaryAction:hover:not(:disabled) { background: #193d53; transform: translateY(-2px); }
+.primaryAction:disabled { cursor: wait; opacity: 0.58; }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 25px 0 16px;
+  color: #9aa5a5;
+  font-size: 0.68rem;
+}
+
+.divider::before,
+.divider::after { height: 1px; flex: 1; content: ''; background: #d8dad4; }
+
+.switchMode {
+  align-self: flex-start;
+  padding: 0;
+  margin-top: 20px;
+  color: #d0644e;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.privacyNote {
+  max-width: 290px;
+  margin: 30px 0 0;
+  color: #9aa5a5;
+  font-size: 0.65rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 900px) {
+  .authPage { grid-template-columns: 1fr; }
+  .atlas { min-height: 48vh; padding: 26px 24px 20px; }
+  .atlasCopy { margin-top: 55px; }
+  .atlasCopy h1 { font-size: clamp(2.8rem, 11vw, 5rem); }
+  .mapSketch { min-height: 170px; margin-top: 30px; margin-bottom: 10px; }
+  .atlasFooter { margin-top: 12px; }
+  .authPanel { max-width: none; padding: 42px 24px 55px; }
+}
+
+@media (max-width: 520px) {
+  .description { font-size: 0.88rem; }
+  .atlasFooter { font-size: 0.62rem; }
+  .atlasFooter span:last-child { display: none; }
+  .authPanel h2 { font-size: 2.35rem; }
+}

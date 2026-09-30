@@ -20,6 +20,7 @@ import { CountryBadge } from './CountryBadge'
 import { SettingsModal } from '../settings/SettingsModal'
 import { ProfileModal } from '../profile/ProfileModal'
 import { GlobalVibesModal } from './GlobalVibesModal'
+import { MapSidebar } from './MapSidebar'
 import { getFriends, getCityFromCoords } from '@/lib/api'
 import { getCountryFromCoords } from '@/lib/geocoding'
 import { useAuth } from '@/context/AuthContext'
@@ -213,7 +214,7 @@ export default function LeafletMap() {
   const [globalVibesOpen, setGlobalVibesOpen] = useState(false)
   const [userFriends, setUserFriends] = useState<Friend[]>([])
   const [visitedCities, setVisitedCities] = useState<City[]>([])
-  const { token } = useAuth()
+  const { token, user } = useAuth()
 
   // 🎨 Определяем темную тему
   const isDarkTheme = selectedLayer === 'dark' || selectedLayer === 'satellite'
@@ -287,15 +288,14 @@ export default function LeafletMap() {
       }
       
       const cityCounts: Record<string, number> = {}
-      visits.forEach((v: { city: string }) => {
-        cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
+      visits.forEach((v: { city?: string }) => {
+        if (v.city) cityCounts[v.city] = (cityCounts[v.city] || 0) + 1
       })
       const cities = Object.entries(cityCounts).map(([name, places]) => ({
         name,
         places,
       }))
       setVisitedCities(cities)
-      console.log('🏙️ Updated cities list:', cities)
     } catch (error) {
       console.error('💥 Ошибка при загрузке визитов:', error)
     }
@@ -305,11 +305,11 @@ export default function LeafletMap() {
     const fetchData = async () => {
       try {
         if (!token) return
-        const friends = await getFriends(token)
+        const [friends] = await Promise.all([
+          getFriends(token),
+          fetchVisitsAndCities(),
+        ])
         setUserFriends(friends)
-        
-        // Загружаем визиты и города
-        await fetchVisitsAndCities()
       } catch (error) {
         console.error('💥 Ошибка при загрузке данных:', error)
       }
@@ -373,26 +373,18 @@ export default function LeafletMap() {
       }}
     >
       {userLocation && <CountryBadge coords={userLocation} />}
+      <MapSidebar
+        name={user?.name}
+        email={user?.email}
+        selectedEmoji={selectedEmoji}
+        cities={visitedCities}
+        friends={userFriends}
+        onOpenProfile={openProfile}
+        onOpenGlobalVibes={openGlobalVibes}
+        onOpenLayers={openLayerSelector}
+        onOpenSettings={openSettings}
+      />
       <div className="top-right-ui">
-        <button
-          className="global-vibes-button"
-          onClick={openGlobalVibes}
-          title="Глобальная статистика вайбов"
-        >
-          🌍
-        </button>
-        <button
-          className="profile-button"
-          onClick={openProfile}
-        >
-          👤
-        </button>
-        <button
-          className="settings-button"
-          onClick={openSettings}
-        >
-          ⚙️
-        </button>
         <div className="layer-switch-wrapper">
           <button
             onClick={openLayerSelector}

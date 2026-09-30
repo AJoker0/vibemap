@@ -1,16 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  eslint: {
-    // Не валим сборку на Vercel из-за ESLint
-    ignoreDuringBuilds: true,
-  },
+  // Keep hot-reload output separate from production builds.
+  distDir: process.env.NODE_ENV === 'development' ? '.next-dev' : '.next',
   images: {
-    domains: [
-      'lh3.googleusercontent.com', // Google profile images
-      'googleusercontent.com',     // Google images
-      'accounts.google.com',       // Google account images
-    ],
     remotePatterns: [
       {
         protocol: 'https',
@@ -26,6 +19,8 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Leaflet accesses browser APIs, so keep it out of the server bundle.
+  serverExternalPackages: ['leaflet'],
 };
 
 export default nextConfig;
